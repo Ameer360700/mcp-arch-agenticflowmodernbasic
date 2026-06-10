@@ -1,0 +1,39 @@
+The Master Learning Plan
+Step 1: The High-Level Architecture (The "Why" and "How")
+Understand how the Model Context Protocol (MCP) Server, the Orchestrator (Agent), and the LLM talk to each other.
+Step 2: Designing the Plug-and-Play MCP Tool (Node.js)
+Build a decoupled add_numbers tool that can be easily plugged into any agent.
+Step 3: The Agentic Loop (The Dynamic Planning)
+Write the recursive loop where the LLM creates a plan, calls the tool, looks at the intermediate result, and decides the next step.
+Step 4: End-to-End Execution & Testing
+Run our PoC with your exact scenario (2+2→+100→+50) and watch the agent adapt in real-time.
+
+
+The High-Level Architecture
+An agentic flow with MCP relies on three distinct roles:
+The MCP Server (The Muscle): This is a standalone Node.js process that holds your tools. 
+    It doesn't know why a tool is being called; it just executes it when requested.
+The LLM (The Brain): This is the AI model. It looks at the user's request, 
+    looks at the available tools, and decides which tool to call next.
+The Agent/Orchestrator (The Nervous System): 
+    This is your main code loop. It passes messages back and forth between the LLM and the MCP Server. 
+    If the LLM says, "I want to use the add tool," the Orchestrator executes it on the MCP server 
+    and feeds the result back to the LLM.
+
+Because the LLM needs to handle dynamic steps, the flow operates as a recursive ReAct (Reason + Act) loop:
+[User Prompt] 
+-> (LLM Plans) 
+-> [Tool Call Request] 
+-> (Agent Executes Tool) 
+-> [Tool Result] 
+-> (LLM Evaluates) 
+-> (Next Tool Call OR Final Answer)
+
+
+[User Prompt] 
+-> (Ollama Model/ Gemma3 Plans) 
+-> [Tool Call Request] 
+-> (Agent Executes Tool) 
+-> [Tool Result] 
+-> (Ollama Model/ Gemma3 eveluates) 
+-> (Next Tool Call OR Final Answer)
