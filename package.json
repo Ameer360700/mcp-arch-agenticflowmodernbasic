@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.6.0",
+    "canvas": "^3.2.3",
     "ollama": "^0.6.3",
     "zod": "^4.4.3"
   },
