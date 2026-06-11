@@ -1,6 +1,9 @@
 // orchestrator.js
+import { file } from 'zod';
 import { registry } from './tools/registry.js';
 import ollama from 'ollama';
+import { de } from 'zod/locales';
+import { writeFile } from 'node:fs/promises';
 
 export async function runAgent(userPrompt) {
   // 1. Convert our plug-and-play tools into a clear text instruction manual for Gemma
@@ -8,15 +11,28 @@ export async function runAgent(userPrompt) {
     return `- Name: ${tool.name}\n  Description: ${tool.description}\n  Arguments Format: {"a": number, "b": number}`;
   }).join('\n\n');
 
+  // const systemInstructions =
+  //   `You are an agentic math planner. You must solve the user's request step-by-step using tools.\n\n` +
+  //   `AVAILABLE TOOLS:\n${toolSpecs}\n\n` +
+  //   `CRITICAL FORMAT RULE:\n` +
+  //   `You must think about your next step, then write a tool call exactly like this format:\n` +
+  //   `THOUGHT: [Your reasoning here]\n` +
+  //   `CALL: tool_name({"a": value, "b": value})\n\n` +
+  //   `If you have the final answer and no more tools are needed, respond exactly in this format:\n` +
+  //   `FINAL_ANSWER: [Your final calculated result here]`;
+
   const systemInstructions =
     `You are an agentic math planner. You must solve the user's request step-by-step using tools.\n\n` +
     `AVAILABLE TOOLS:\n${toolSpecs}\n\n` +
+    `CRITICAL RULES:\n` +
+    `1. Before drawing a new line, you MUST use 'check_line' to verify if it already exists.\n` +
+    `2. After drawing a line, you MUST use 'check_line' to confirm it was registered correctly.\n\n` +
     `CRITICAL FORMAT RULE:\n` +
     `You must think about your next step, then write a tool call exactly like this format:\n` +
     `THOUGHT: [Your reasoning here]\n` +
     `CALL: tool_name({"a": value, "b": value})\n\n` +
     `If you have the final answer and no more tools are needed, respond exactly in this format:\n` +
-    `FINAL_ANSWER: [Your final calculated result here]`;
+    `FINAL_ANSWER: [Your final calculated result here]. FINAL_ANSWER MUST be the last line of your response.`;
 
   const messages = [
     { role: "system", content: systemInstructions },
@@ -27,14 +43,16 @@ export async function runAgent(userPrompt) {
 
   let keepGoing = true;
   let loopCount = 0;
-  const MAX_ITERATIONS = 6;
+  const MAX_ITERATIONS = 100;
 
   while (keepGoing && loopCount < MAX_ITERATIONS) {
+  // write meesages to a file for debugging
     loopCount++;
     console.log(`\n--- [Iteration ${loopCount}] ---`);
 
     // Call Ollama WITHOUT the native tools array parameter
     const response = await ollama.chat({
+      // model: 'deepseek-r1:7b',
       model: 'gemma3:4b',
       messages: messages
     });
@@ -60,7 +78,7 @@ export async function runAgent(userPrompt) {
 
         // Execute via our plug-and-play registry
         const toolResult = await registry.executeTool(toolName, toolArgs);
-        console.log(`Tool Result:`, toolResult);
+        console.log(`Tool Result:`, toolResult,toolArgs);
 
         // Feed the result back as a system observation text block
         messages.push({
@@ -80,10 +98,12 @@ export async function runAgent(userPrompt) {
       console.log(`\n🏁 Agent finished in ${loopCount} steps.`);
       console.log(`📝 Verified Final Response: ${finalMatch[1]}`);
       keepGoing = false;
-    } else {
-      console.log("⚠️ Model did not follow formatting rules. Forcing exit.");
-      keepGoing = false;
-    }
+    } 
+    // else {
+    //   console.log("⚠️ Model did not follow formatting rules. Forcing exit.");
+    //   keepGoing = false;
+    // }
+    await overwriteFile(JSON.stringify(messages));
   }
 }
 
@@ -93,13 +113,14 @@ async function safelyParseToolArgs(toolArgsString, toolName) {
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
+      console.log(`Tool parse attempt ${attempt} for tool [${toolName}]`);
       // Try parsing the current string
       const validJsonString = currentString
         .replace(/:\s*NaN/g, ': 0')
         .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":') // 1. Wrap unquoted keys in double quotes
         .replace(/:\s*'([^']*)'/g, ': "$1"');// 2. Replace single quotes on values with double quotes
       const toolArgs = JSON.parse(currentString);
-      console.log(`Running [${toolName}] with args:`, toolArgs);
+      console.log(`Tool parsed [${toolName}] with args:`, toolArgs);
       return toolArgs; // Success! Return the parsed object
 
     } catch (parseError) {
@@ -140,5 +161,15 @@ async function askOllamaToFixJson(badJsonString, errorMessage) {
     console.error('Ollama API error:', ollamaError.message);
     // Return original string to let the next loop iteration handle the failure gracefully
     return badJsonString;
+  }
+}
+
+async function overwriteFile(content) {
+  try {
+    // 'w' flag opens the file for writing, clearing existing content first
+    await writeFile("./messages_log.json", content, { flag: 'w', encoding: 'utf8' });
+    console.log('File successfully updated.');
+  } catch (error) {
+    console.error('Error writing to file:', error.message);
   }
 }

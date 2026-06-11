@@ -1,7 +1,9 @@
 import { drawLineTool } from './canvasTool.js'; // 1. Import the canvas tool
+import { checkLineTool } from './checkLine.js'; // 1. Import the check line tool
 
 const toolsList = [
-  drawLineTool // 2. Add it to the array
+  drawLineTool, // 2. Add it to the array
+  checkLineTool // 2. Add it to the array
 ];
 
 export const registry = {
