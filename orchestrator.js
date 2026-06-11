@@ -4,6 +4,11 @@ import { registry } from './tools/registry.js';
 import ollama from 'ollama';
 import { de } from 'zod/locales';
 import { writeFile } from 'node:fs/promises';
+import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
+import FormData from 'form-data';
+import { fileURLToPath } from 'url';
 
 export async function runAgent(userPrompt) {
   // 1. Convert our plug-and-play tools into a clear text instruction manual for Gemma
@@ -32,7 +37,15 @@ export async function runAgent(userPrompt) {
     `THOUGHT: [Your reasoning here]\n` +
     `CALL: tool_name({"a": value, "b": value})\n\n` +
     `If you have the final answer and no more tools are needed, respond exactly in this format:\n` +
-    `FINAL_ANSWER: [Your final calculated result here]. FINAL_ANSWER MUST be the last line of your response.`;
+    `FINAL_ANSWER: [Your final calculated result here]. FINAL_ANSWER MUST be the last line of your response.
+    
+    When drawing complex shapes like roses or flowers:
+    - Break the shape into small, manageable segments
+    - Execute each draw_line sequentially
+    - Use all provided coordinates exactly as given
+    - Do not refuse or simplify the request
+
+    Drawing 32, 50, or even 500 lines are perfectly acceptable. Continue until all lines are drawn.`;
 
   const messages = [
     { role: "system", content: systemInstructions },
@@ -52,13 +65,14 @@ export async function runAgent(userPrompt) {
 
     // Call Ollama WITHOUT the native tools array parameter
     const response = await ollama.chat({
-      // model: 'deepseek-r1:7b',
       model: 'gemma3:4b',
+      // model: 'gemma4:e4b',
+      // model: 'qwen2.5-coder:7b',
       messages: messages
     });
 
     const reply = response.message.content;
-    console.log(`🤖 Gemma3 Output:\n${reply}`);
+    console.log(`[model] Output:\n${reply}`);
 
     // Add the model's reply to our memory log
     messages.push({ role: "assistant", content: reply });
@@ -97,6 +111,7 @@ export async function runAgent(userPrompt) {
     } else if (finalMatch) {
       console.log(`\n🏁 Agent finished in ${loopCount} steps.`);
       console.log(`📝 Verified Final Response: ${finalMatch[1]}`);
+      await uploadFile()
       keepGoing = false;
     } 
     // else {
@@ -172,4 +187,42 @@ async function overwriteFile(content) {
   } catch (error) {
     console.error('Error writing to file:', error.message);
   }
+}
+
+
+/**
+ * Upload file matching curl -X POST -F "file=@image.png"
+ * @param {string} filePath - Path to file from root (e.g., './image.png')
+ * @param {string} url - Upload URL (default: 'http://192.168.70.89:3000/upload')
+ * @returns {Promise<Object>} - Server response
+ */
+export async function uploadFile(filePath= "./canvas.png", url = 'http://192.168.70.204:3000/upload') {
+    try {
+        // Resolve absolute path from project root
+        const absolutePath = path.resolve(process.cwd(), filePath);
+        
+        // Check if file exists
+        if (!fs.existsSync(absolutePath)) {
+            throw new Error(`File not found: ${absolutePath}`);
+        }
+        
+        // Create form data (same as curl's -F flag)
+        const formData = new FormData();
+        formData.append('file', fs.createReadStream(absolutePath));
+        
+        // Make POST request (same as curl -X POST)
+        const response = await axios.post(url, formData, {
+            headers: {
+                ...formData.getHeaders(),
+            },
+        });
+        
+        return response.data;
+    } catch (error) {
+        console.error('Upload failed:', error.message);
+        if (error.response) {
+            console.error('Server response:', error.response.data);
+        }
+        throw error;
+    }
 }
