@@ -38,7 +38,7 @@ export const drawLineTool = {
   },
 
   execute: async (args) => {
-    console.log("🔍 DEBUG - Received args:", JSON.stringify(args));
+    console.log("Tool Execution Started", JSON.stringify(args));
     
     // 1. Force strict data type conversion
     const startX = Number(args.startX);
@@ -46,8 +46,6 @@ export const drawLineTool = {
     const endX = Number(args.endX);
     const endY = Number(args.endY);
     const lineColor = args.lineColor;
-    
-    console.log("🔍 DEBUG - Converted coordinates:", { startX, startY, endX, endY, lineColor });
 
     const filePath = './canvas.png';
     const width = 800;
@@ -57,24 +55,17 @@ export const drawLineTool = {
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext('2d');
 
-    // 3. Load existing canvas if it exists, otherwise initialize white background
-    console.log("🔍 DEBUG - Checking if file exists:", filePath);
-    console.log("🔍 DEBUG - File exists:", fs.existsSync(filePath));
+
     
     if (fs.existsSync(filePath)) {
       try {
-        console.log("🔍 DEBUG - Loading existing image...");
         const existingImage = await loadImage(filePath);
-        console.log("🔍 DEBUG - Image loaded, dimensions:", existingImage.width, "x", existingImage.height);
         ctx.drawImage(existingImage, 0, 0, width, height);
-        console.log("🔍 DEBUG - Image drawn on canvas");
       } catch (err) {
-        console.log("⚠️ Existing canvas.png was unreadable. Starting fresh.", err.message);
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, width, height);
       }
     } else {
-      console.log("🎨 canvas.png not found. Creating a fresh 800x480 canvas.");
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, width, height);
     }
@@ -82,7 +73,7 @@ export const drawLineTool = {
     // 4. Configure drawing styles and draw the line
     // const actualColor = lineColor === 'red' ? '#FF0000' : '#000000';
     const actualColor = '#000000';
-    console.log("🔍 DEBUG - Drawing line with color:", actualColor);
+    console.log(`- draw_line(${startX}, ${startY}, ${endX}, ${endY}, ${lineColor}):`);
     
     ctx.strokeStyle = actualColor;
     ctx.lineWidth = 4;
@@ -93,19 +84,13 @@ export const drawLineTool = {
     ctx.lineTo(endX, endY);
     ctx.stroke();
 
-    console.log(`\n🖌️ [Canvas Tool] Line drawn: (${startX}, ${startY}) -> (${endX}, ${endY}) [${lineColor}]`);
-
     // 5. Save the updated canvas back to disk
     try {
-      console.log("🔍 DEBUG - Saving canvas to:", filePath);
       const buffer = canvas.toBuffer('image/png');
-      console.log("🔍 DEBUG - Buffer size:", buffer.length);
       fs.writeFileSync(filePath, buffer);
-      console.log("🔍 DEBUG - File saved successfully");
       
       // Verify the file
       const stats = fs.statSync(filePath);
-      console.log("🔍 DEBUG - Saved file size:", stats.size, "bytes");
       
       return { 
         status: "success", 
@@ -118,3 +103,35 @@ export const drawLineTool = {
     }
   }
 };
+
+// async function drawAllLines() {
+//   // Array of all line configurations
+  
+//   const lineConfigs = [
+//     { startX: 350, startY: 350, endX: 50, endY: 350, lineColor: "blue" },
+//     { startX: 50, startY: 350, endX: 50, endY: 50, lineColor: "blue" },
+//     { startX: 100, startY: 50, endX: 200, endY: 150, lineColor: "blue" },
+//     { startX: 200, startY: 150, endX: 300, endY: 250, lineColor: "blue" },
+//     { startX: 300, startY: 250, endX: 200, endY: 350, lineColor: "blue" },
+//     { startX: 200, startY: 350, endX: 100, endY: 250, lineColor: "blue" },
+//     { startX: 100, startY: 250, endX: 50, endY: 150, lineColor: "blue" },
+//     { startX: 50, startY: 150, endX: 100, endY: 50, lineColor: "blue" },
+//     { startX: 100, startY: 50, endX: 200, endY: 150, lineColor: "blue" },
+//     { startX: 200, startY: 150, endX: 300, endY: 250, lineColor: "blue" },
+//     { startX: 300, startY: 250, endX: 200, endY: 350, lineColor: "blue" },
+//     { startX: 200, startY: 350, endX: 100, endY: 250, lineColor: "blue" },
+//     { startX: 100, startY: 250, endX: 50, endY: 150, lineColor: "blue" },
+//     { startX: 50, startY: 150, endX: 100, endY: 50, lineColor: "blue" },
+//     { startX: 150, startY: 50, endX: 250, endY: 150, lineColor: "blue" },
+//     { startX: 250, startY: 150, endX: 350, endY: 250, lineColor: "blue" },
+//     { startX: 350, startY: 250, endX: 300, endY: 350, lineColor: "blue" },
+//     { startX: 300, startY: 350, endX: 200, endY: 350, lineColor: "blue" }
+//   ];
+
+//   // Loop through each configuration and call the function
+//   for (const config of lineConfigs) {
+//     await drawLineTool.execute(config);
+//   }
+// }
+
+// drawAllLines()
