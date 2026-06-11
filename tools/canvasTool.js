@@ -80,7 +80,8 @@ export const drawLineTool = {
     }
 
     // 4. Configure drawing styles and draw the line
-    const actualColor = lineColor === 'red' ? '#FF0000' : '#000000';
+    // const actualColor = lineColor === 'red' ? '#FF0000' : '#000000';
+    const actualColor = '#000000';
     console.log("🔍 DEBUG - Drawing line with color:", actualColor);
     
     ctx.strokeStyle = actualColor;

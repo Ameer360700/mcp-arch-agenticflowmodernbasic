@@ -8,7 +8,7 @@ export async function runAgent(userPrompt) {
     return `- Name: ${tool.name}\n  Description: ${tool.description}\n  Arguments Format: {"a": number, "b": number}`;
   }).join('\n\n');
 
-  const systemInstructions = 
+  const systemInstructions =
     `You are an agentic math planner. You must solve the user's request step-by-step using tools.\n\n` +
     `AVAILABLE TOOLS:\n${toolSpecs}\n\n` +
     `CRITICAL FORMAT RULE:\n` +
@@ -24,7 +24,7 @@ export async function runAgent(userPrompt) {
   ];
 
   console.log(`\n🚀 Starting Text-Based Agentic Flow for: "${userPrompt}"`);
-  
+
   let keepGoing = true;
   let loopCount = 0;
   const MAX_ITERATIONS = 6;
@@ -41,7 +41,7 @@ export async function runAgent(userPrompt) {
 
     const reply = response.message.content;
     console.log(`🤖 Gemma3 Output:\n${reply}`);
-    
+
     // Add the model's reply to our memory log
     messages.push({ role: "assistant", content: reply });
 
@@ -52,14 +52,15 @@ export async function runAgent(userPrompt) {
     if (callMatch) {
       const toolName = callMatch[1];
       const toolArgsString = callMatch[2];
-      
+
       try {
-        const toolArgs = JSON.parse(toolArgsString);
-        console.log(`🔧 Parsed Request: Running [${toolName}] with args:`, toolArgs);
+        // const toolArgs = JSON.parse(toolArgsString);
+        const toolArgs = await safelyParseToolArgs(toolArgsString, toolName);
+        console.log(`Running [${toolName}] with args:`, toolArgs);
 
         // Execute via our plug-and-play registry
         const toolResult = await registry.executeTool(toolName, toolArgs);
-        console.log(`🔌 Tool Result:`, toolResult);
+        console.log(`Tool Result:`, toolResult);
 
         // Feed the result back as a system observation text block
         messages.push({
@@ -83,5 +84,61 @@ export async function runAgent(userPrompt) {
       console.log("⚠️ Model did not follow formatting rules. Forcing exit.");
       keepGoing = false;
     }
+  }
+}
+
+async function safelyParseToolArgs(toolArgsString, toolName) {
+  let currentString = toolArgsString;
+  const maxAttempts = 5;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      // Try parsing the current string
+      const validJsonString = currentString
+        .replace(/:\s*NaN/g, ': 0')
+        .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":') // 1. Wrap unquoted keys in double quotes
+        .replace(/:\s*'([^']*)'/g, ': "$1"');// 2. Replace single quotes on values with double quotes
+      const toolArgs = JSON.parse(currentString);
+      console.log(`Running [${toolName}] with args:`, toolArgs);
+      return toolArgs; // Success! Return the parsed object
+
+    } catch (parseError) {
+      console.warn(`[Attempt ${attempt}/${maxAttempts}] JSON parse failed for ${toolName}: ${parseError.message}`);
+
+      // If we hit the limit, throw the final error
+      if (attempt === maxAttempts) {
+        throw new Error(`Failed to parse toolArgs after ${maxAttempts} attempts. Original string: ${toolArgsString}`);
+      }
+
+      // Ask Ollama to fix the malformed string
+      currentString = await askOllamaToFixJson(currentString, parseError.message);
+    }
+  }
+}
+
+async function askOllamaToFixJson(badJsonString, errorMessage) {
+  const systemPrompt = `You are a strict JSON repair utility. 
+  Fix the syntax errors in the provided JSON string so it becomes valid, parseable JSON. 
+  Return ONLY the raw, corrected JSON string. 
+  Do NOT include markdown code blocks, backticks (\`\`\`), or explanations.`;
+
+  const userPrompt = `Error: ${errorMessage}\nMalformed JSON:\n${badJsonString}`;
+
+  try {
+    const response = await ollama.generate({
+      model: 'gemma3:4b', // or 'mistral', 'qwen', etc.
+      system: systemPrompt,
+      prompt: userPrompt,
+      options: {
+        temperature: 0.1 // Keep it deterministic
+      }
+    });
+
+    // Clean up any rogue formatting just in case
+    return response.response.trim().replace(/^```json|```$/g, '');
+  } catch (ollamaError) {
+    console.error('Ollama API error:', ollamaError.message);
+    // Return original string to let the next loop iteration handle the failure gracefully
+    return badJsonString;
   }
 }

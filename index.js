@@ -1,6 +1,7 @@
 // index.js
 import readline from 'readline';
 import { runAgent } from './orchestrator.js';
+import { unlink, access } from 'node:fs/promises';
 
 // The exact dynamic scenario you wanted to test
 // const prompt = "What is 2+2, then add 100, then add 50?";
@@ -14,10 +15,10 @@ import { runAgent } from './orchestrator.js';
 async function removeFile() {
   try {
     // 1. Check if the file exists
-    await access('./canvas.png');
+    await access('/Users/abuabdullah/Desktop/agentic-flow-mcp/canvas.png');
 
     // 2. If no error was thrown, delete it
-    await unlink('./canvas.png');
+    await unlink('/Users/abuabdullah/Desktop/agentic-flow-mcp/canvas.png');
     console.log('File successfully deleted.');
   } catch (error) {
   }
@@ -36,7 +37,7 @@ const main = async () => {
 
     await removeFile();
 
-    const userPrompt = await askUser("\n🧮 Math question: ");
+    const userPrompt = await askUser("\nYour Question: ");
     if (!userPrompt.trim()) continue;
 
     // mcp client to AI Call
