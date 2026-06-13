@@ -9,8 +9,10 @@ import fs from 'fs';
 import path from 'path';
 import FormData from 'form-data';
 import { fileURLToPath } from 'url';
+import { callAI } from './ai/ai.service.js';
 
-export async function runAgent(userPrompt) {
+// sk-19c49e0e008f4e6dabbc1335987277b7
+export async function runAgent(userPrompt, provider = 'ollama') {
   // 1. Convert our plug-and-play tools into a clear text instruction manual for Gemma
   const toolSpecs = registry.getToolDefinitions().map(tool => {
     return `- Name: ${tool.name}\n  Description: ${tool.description}\n  Arguments Format: {"a": number, "b": number}`;
@@ -25,13 +27,12 @@ export async function runAgent(userPrompt) {
   //   `CALL: tool_name({"a": value, "b": value})\n\n` +
   //   `If you have the final answer and no more tools are needed, respond exactly in this format:\n` +
   //   `FINAL_ANSWER: [Your final calculated result here]`;
-
+// `1. Before drawing a new line, you MUST use 'check_line' to verify if it already exists.\n` +
   const systemInstructions =
     `You are an agentic math planner. You must solve the user's request step-by-step using tools.\n\n` +
     `AVAILABLE TOOLS:\n${toolSpecs}\n\n` +
     `CRITICAL RULES:\n` +
-    `1. Before drawing a new line, you MUST use 'check_line' to verify if it already exists.\n` +
-    `2. After drawing a line, you MUST use 'check_line' to confirm it was registered correctly.\n\n` +
+    `1. After drawing a line, you MUST use 'check_line' to confirm it was registered correctly.\n\n` +
     `CRITICAL FORMAT RULE:\n` +
     `You must think about your next step, then write a tool call exactly like this format:\n` +
     `THOUGHT: [Your reasoning here]\n` +
@@ -45,8 +46,21 @@ export async function runAgent(userPrompt) {
     - Use all provided coordinates exactly as given
     - Do not refuse or simplify the request
 
-    Drawing 32, 50, or even 500 lines are perfectly acceptable. Continue until all lines are drawn.`;
+    Drawing 32, 50, or even 500 lines are perfectly acceptable. Continue until all lines are drawn.
+    CRITICAL FORMAT RULE:
+      You can only execute ONE tool call per turn. Do not list multiple thoughts or calls.
+      Your tool arguments must be strictly valid JSON (use double quotes for keys and strings).
+      Do NOT include FINAL_ANSWER if you are planning to make a tool call. FINAL_ANSWER must only be used when all lines from the user's request have been successfully drawn and checked.
+      Incorrect:
+      THOUGHT: Draw line 1.
+      CALL: draw_line(...)
+      THOUGHT: Draw line 2.
+      CALL: draw_line(...)
+      Correct:
+      THOUGHT: I will draw the first segment of the shape.
+      CALL: draw_line({\"startX\": 270, \"startY\": 90, \"endX\": 270, \"endY\": 150, \"lineColor\": \"blue\"}})`;
 
+  // escape double quaotes systemInstructions
   const messages = [
     { role: "system", content: systemInstructions },
     { role: "user", content: userPrompt }
@@ -64,12 +78,7 @@ export async function runAgent(userPrompt) {
     console.log(`\n--- [Iteration ${loopCount}] ---`);
 
     // Call Ollama WITHOUT the native tools array parameter
-    const response = await ollama.chat({
-      model: 'gemma3:4b',
-      // model: 'gemma4:e4b',
-      // model: 'qwen2.5-coder:7b',
-      messages: messages
-    });
+    const response = await callAI({provider, messages});
 
     const reply = response.message.content;
     console.log(`[model] Output:\n${reply}`);
@@ -152,7 +161,7 @@ async function safelyParseToolArgs(toolArgsString, toolName) {
   }
 }
 
-async function askOllamaToFixJson(badJsonString, errorMessage) {
+async function askOllamaToFixJson(provider,badJsonString, errorMessage) {
   const systemPrompt = `You are a strict JSON repair utility. 
   Fix the syntax errors in the provided JSON string so it becomes valid, parseable JSON. 
   Return ONLY the raw, corrected JSON string. 
@@ -160,15 +169,16 @@ async function askOllamaToFixJson(badJsonString, errorMessage) {
 
   const userPrompt = `Error: ${errorMessage}\nMalformed JSON:\n${badJsonString}`;
 
+   const messages = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userPrompt }
+  ];
+
   try {
-    const response = await ollama.generate({
-      model: 'gemma3:4b', // or 'mistral', 'qwen', etc.
-      system: systemPrompt,
-      prompt: userPrompt,
-      options: {
-        temperature: 0.1 // Keep it deterministic
-      }
-    });
+    const response = await callAI({
+      provider: provider,
+      messages: messages
+    });;
 
     // Clean up any rogue formatting just in case
     return response.response.trim().replace(/^```json|```$/g, '');

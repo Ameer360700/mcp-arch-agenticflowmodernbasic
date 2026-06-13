@@ -13,7 +13,9 @@
     "@modelcontextprotocol/sdk": "^0.6.0",
     "axios": "^1.17.0",
     "canvas": "^3.2.3",
+    "dotenv": "^17.4.2",
     "ollama": "^0.6.3",
+    "openai": "^6.42.0",
     "zod": "^4.4.3"
   },
   "type": "module"

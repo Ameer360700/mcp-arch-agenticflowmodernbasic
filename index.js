@@ -2,15 +2,9 @@
 import readline from 'readline';
 import { runAgent } from './orchestrator.js';
 import { unlink, access } from 'node:fs/promises';
+import dotenv from 'dotenv';
 
-// The exact dynamic scenario you wanted to test
-// const prompt = "What is 2+2, then add 100, then add 50?";
-// const prompt = "Draw a square in the middle of canvas?";
 
-// Fire up the local agentic flow
-// runAgent(prompt).catch(err => {
-//   console.error("💥 Critical Agent Error:", err);
-// });
 
 async function removeFile() {
   try {
@@ -37,11 +31,15 @@ const main = async () => {
 
     await removeFile();
 
+    const aiProvider = await askUser("\nAI Provider (ollama/deepseek/chatgpt): ");
+    if (!aiProvider.trim()) continue;
+
+
     const userPrompt = await askUser("\nYour Question: ");
     if (!userPrompt.trim()) continue;
 
     // mcp client to AI Call
-    await runAgent(userPrompt)
+    await runAgent(userPrompt,aiProvider)
 
     const again = await askUser("\nContinue? (yes/no): ");
     if (again.toLowerCase() !== 'yes') running = false;
