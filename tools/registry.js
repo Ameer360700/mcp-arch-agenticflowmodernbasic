@@ -1,4 +1,4 @@
-import { drawLineTool } from './canvasTool.js'; // 1. Import the canvas tool
+import { drawLineTool } from './drawLine.js'; // 1. Import the canvas tool
 import { checkLineTool } from './checkLine.js'; // 1. Import the check line tool
 
 const toolsList = [
