@@ -4,10 +4,7 @@ import { registry } from './tools/registry.js';
 import ollama from 'ollama';
 import { de } from 'zod/locales';
 import { writeFile } from 'node:fs/promises';
-import axios from 'axios';
-import fs from 'fs';
 import path from 'path';
-import FormData from 'form-data';
 import { fileURLToPath } from 'url';
 import { callAI } from './ai/ai.service.js';
 
@@ -120,7 +117,6 @@ export async function runAgent(userPrompt, provider = 'ollama') {
     } else if (finalMatch) {
       console.log(`\n🏁 Agent finished in ${loopCount} steps.`);
       console.log(`📝 Verified Final Response: ${finalMatch[1]}`);
-      await uploadFile()
       keepGoing = false;
     } 
     // else {
@@ -206,33 +202,3 @@ async function overwriteFile(content) {
  * @param {string} url - Upload URL (default: 'http://192.168.70.89:3000/upload')
  * @returns {Promise<Object>} - Server response
  */
-export async function uploadFile(filePath= "./canvas.png", url = 'http://192.168.70.204:3000/upload') {
-    try {
-        // Resolve absolute path from project root
-        const absolutePath = path.resolve(process.cwd(), filePath);
-        
-        // Check if file exists
-        if (!fs.existsSync(absolutePath)) {
-            throw new Error(`File not found: ${absolutePath}`);
-        }
-        
-        // Create form data (same as curl's -F flag)
-        const formData = new FormData();
-        formData.append('file', fs.createReadStream(absolutePath));
-        
-        // Make POST request (same as curl -X POST)
-        const response = await axios.post(url, formData, {
-            headers: {
-                ...formData.getHeaders(),
-            },
-        });
-        
-        return response.data;
-    } catch (error) {
-        console.error('Upload failed:', error.message);
-        if (error.response) {
-            console.error('Server response:', error.response.data);
-        }
-        throw error;
-    }
-}

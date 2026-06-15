@@ -31,7 +31,7 @@ const main = async () => {
 
     await removeFile();
 
-    const aiProvider = await askUser("\nAI Provider (ollama/deepseek/chatgpt): ");
+    const aiProvider = await askUser("\nAI Provider (ollama): ");
     if (!aiProvider.trim()) continue;
 
 
