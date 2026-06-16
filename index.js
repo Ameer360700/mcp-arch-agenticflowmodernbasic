@@ -9,10 +9,10 @@ import dotenv from 'dotenv';
 async function removeFile() {
   try {
     // 1. Check if the file exists
-    await access('/Users/abuabdullah/Desktop/agentic-flow-mcp/canvas.png');
+    await access('/Users/ameershadab/Desktop/agentic-flow-mcp/canvas.png');
 
     // 2. If no error was thrown, delete it
-    await unlink('/Users/abuabdullah/Desktop/agentic-flow-mcp/canvas.png');
+    await unlink('/Users/ameershadab/Desktop/agentic-flow-mcp/canvas.png');
     console.log('File successfully deleted.');
   } catch (error) {
   }

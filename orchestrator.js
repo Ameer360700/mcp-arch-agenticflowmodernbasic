@@ -36,8 +36,11 @@ export async function runAgent(userPrompt, provider = 'ollama') {
     `CALL: tool_name({"a": value, "b": value})\n\n` +
     `If you have the final answer and no more tools are needed, respond exactly in this format:\n` +
     `FINAL_ANSWER: [Your final calculated result here]. FINAL_ANSWER MUST be the last line of your response.
+     CRITICAL: You MUST call draw_line tool for each line. 
+     Do NOT give FINAL_ANSWER until all tools have been actually executed and verified.
+     FINAL_ANSWER is only allowed after all CALL and RESPONSE cycles are complete.
     
-    When drawing complex shapes like roses or flowers:
+     When drawing complex shapes like roses or flowers:
     - Break the shape into small, manageable segments
     - Execute each draw_line sequentially
     - Use all provided coordinates exactly as given
