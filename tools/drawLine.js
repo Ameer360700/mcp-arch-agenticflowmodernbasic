@@ -5,6 +5,7 @@ export const drawLineTool = {
   profile: {
     name: "draw_line",
     description: "Draws a straight line on an 800x480 canvas image named 'canvas.png'. " +
+                 "Draws a straight line on the 800x480 canvas. Required args: startX, startY, endX, endY, lineColor." +
                  "To draw a line, you MUST provide startX, startY, endX, endY, and lineColor. " +
                  "Example: draw_line({startX: 100, startY: 200, endX: 300, endY: 400, lineColor: 'red'}) " +
                  "If the canvas file doesn't exist, it automatically creates it.",

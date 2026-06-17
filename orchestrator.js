@@ -1,93 +1,58 @@
 // orchestrator.js
-import { file } from 'zod';
 import { registry } from './tools/registry.js';
-import ollama from 'ollama';
-import { de } from 'zod/locales';
 import { writeFile } from 'node:fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { callAI } from './ai/ai.service.js';
 
-// sk-19c49e0e008f4e6dabbc1335987277b7
 export async function runAgent(userPrompt, provider = 'ollama') {
-  // 1. Convert our plug-and-play tools into a clear text instruction manual for Gemma
-  const toolSpecs = registry.getToolDefinitions().map(tool => {
-    return `- Name: ${tool.name}\n  Description: ${tool.description}\n  Arguments Format: {"a": number, "b": number}`;
-  }).join('\n\n');
 
-  // const systemInstructions =
-  //   `You are an agentic math planner. You must solve the user's request step-by-step using tools.\n\n` +
-  //   `AVAILABLE TOOLS:\n${toolSpecs}\n\n` +
-  //   `CRITICAL FORMAT RULE:\n` +
-  //   `You must think about your next step, then write a tool call exactly like this format:\n` +
-  //   `THOUGHT: [Your reasoning here]\n` +
-  //   `CALL: tool_name({"a": value, "b": value})\n\n` +
-  //   `If you have the final answer and no more tools are needed, respond exactly in this format:\n` +
-  //   `FINAL_ANSWER: [Your final calculated result here]`;
-// `1. Before drawing a new line, you MUST use 'check_line' to verify if it already exists.\n` +
   const systemInstructions =
-    `You are an agentic math planner. You must solve the user's request step-by-step using tools.\n\n` +
-    `AVAILABLE TOOLS:\n${toolSpecs}\n\n` +
-    `CRITICAL RULES:\n` +
-    `1. After drawing a line, you MUST use 'check_line' to confirm it was registered correctly.\n\n` +
-    `CRITICAL FORMAT RULE:\n` +
-    `You must think about your next step, then write a tool call exactly like this format:\n` +
-    `THOUGHT: [Your reasoning here]\n` +
-    `CALL: tool_name({"a": value, "b": value})\n\n` +
-    `If you have the final answer and no more tools are needed, respond exactly in this format:\n` +
-    `FINAL_ANSWER: [Your final calculated result here]. FINAL_ANSWER MUST be the last line of your response.
-     CRITICAL: You MUST call draw_line tool for each line. 
-     Do NOT give FINAL_ANSWER until all tools have been actually executed and verified.
-     FINAL_ANSWER is only allowed after all CALL and RESPONSE cycles are complete.
-    
-     When drawing complex shapes like roses or flowers:
-    - Break the shape into small, manageable segments
-    - Execute each draw_line sequentially
-    - Use all provided coordinates exactly as given
-    - Do not refuse or simplify the request
+    `You are a drawing agent. You draw shapes using the draw_line tool.\n\n` +
 
-    Drawing 32, 50, or even 500 lines are perfectly acceptable. Continue until all lines are drawn.
-    CRITICAL FORMAT RULE:
-      You can only execute ONE tool call per turn. Do not list multiple thoughts or calls.
-      Your tool arguments must be strictly valid JSON (use double quotes for keys and strings).
-      Do NOT include FINAL_ANSWER if you are planning to make a tool call. FINAL_ANSWER must only be used when all lines from the user's request have been successfully drawn and checked.
-      Incorrect:
-      THOUGHT: Draw line 1.
-      CALL: draw_line(...)
-      THOUGHT: Draw line 2.
-      CALL: draw_line(...)
-      Correct:
-      THOUGHT: I will draw the first segment of the shape.
-      CALL: draw_line({\"startX\": 270, \"startY\": 90, \"endX\": 270, \"endY\": 150, \"lineColor\": \"blue\"}})`;
+    `AVAILABLE TOOLS:\n` +
+    `- draw_line: draws a line. Args: {"startX": number, "startY": number, "endX": number, "endY": number, "lineColor": "black"}\n` +
+    `- check_line: verifies a line exists. Args: {"startX": number, "startY": number, "endX": number, "endY": number}\n\n` +
 
-  // escape double quaotes systemInstructions
+    `CANVAS: 800x480 pixels. Top-left is (0,0). Center is (400,240).\n\n` +
+
+    `RULES:\n` +
+    `1. Draw one line at a time.\n` +
+    `2. After each draw_line, call check_line to verify it.\n` +
+    `3. Output ONE CALL per turn. Never output multiple CALLs.\n` +
+    `4. Only output FINAL_ANSWER when ALL lines are drawn and verified.\n\n` +
+
+    `FORMAT:\n` +
+    `THOUGHT: [your reasoning]\n` +
+    `CALL: tool_name({"key": value})\n\n` +
+
+    `When done:\n` +
+    `FINAL_ANSWER: [what was drawn]\n\n` +
+
+    `EXAMPLE:\n` +
+    `THOUGHT: I will draw the first line of the triangle.\n` +
+    `CALL: draw_line({"startX": 400, "startY": 100, "endX": 200, "endY": 400, "lineColor": "black"})`;
+
   const messages = [
     { role: "system", content: systemInstructions },
     { role: "user", content: userPrompt }
   ];
 
-  console.log(`\n🚀 Starting Text-Based Agentic Flow for: "${userPrompt}"`);
+  console.log(`\n🚀 Starting Agent for: "${userPrompt}"`);
 
   let keepGoing = true;
   let loopCount = 0;
   const MAX_ITERATIONS = 100;
 
   while (keepGoing && loopCount < MAX_ITERATIONS) {
-  // write meesages to a file for debugging
     loopCount++;
     console.log(`\n--- [Iteration ${loopCount}] ---`);
 
-    // Call Ollama WITHOUT the native tools array parameter
-    const response = await callAI({provider, messages});
-
+    const response = await callAI({ provider, messages });
     const reply = response.message.content;
     console.log(`[model] Output:\n${reply}`);
 
-    // Add the model's reply to our memory log
     messages.push({ role: "assistant", content: reply });
 
-    // 2. Parse if the model wants to call a tool using a Regex
-    const callMatch = reply.match(/CALL:\s*(\w+)\((.+)\)/);
+    const callMatch = reply.match(/CALL:\s*(\w+)\((\{[^}]+\})\)/);
     const finalMatch = reply.match(/FINAL_ANSWER:\s*(.+)/);
 
     if (callMatch) {
@@ -95,113 +60,87 @@ export async function runAgent(userPrompt, provider = 'ollama') {
       const toolArgsString = callMatch[2];
 
       try {
-        // const toolArgs = JSON.parse(toolArgsString);
-        const toolArgs = await safelyParseToolArgs(toolArgsString, toolName);
+        const toolArgs = await safelyParseToolArgs(toolArgsString, toolName, provider);
         console.log(`Running [${toolName}] with args:`, toolArgs);
 
-        // Execute via our plug-and-play registry
         const toolResult = await registry.executeTool(toolName, toolArgs);
-        console.log(`Tool Result:`, toolResult,toolArgs);
+        console.log(`Tool Result:`, toolResult);
 
-        // Feed the result back as a system observation text block
         messages.push({
-          role: "user",
-          content: `RESPONSE from ${toolName}: ${JSON.stringify(toolResult)}`
+        role: "user",
+        content: toolName.startsWith('draw_')
+         ? `RESPONSE from ${toolName}: ${JSON.stringify(toolResult)}. Now verify this EXACT line using check_${toolName.replace('draw_', '')} with the SAME coordinates: ${toolArgsString}`
+         : `RESPONSE from ${toolName}: ${JSON.stringify(toolResult)}. Now continue to the NEXT step in your plan.`
         });
 
       } catch (err) {
-        console.error("❌ Failed to execute or parse text tool call:", err.message);
+        console.error("❌ Failed to parse tool call:", err.message);
         messages.push({
           role: "user",
-          content: `RESPONSE error: Could not parse arguments. Please try again with strict JSON format.`
+          content: `RESPONSE error: Use strict JSON format. Example: CALL: draw_line({"startX": 100, "startY": 100, "endX": 200, "endY": 200, "lineColor": "black"})`
         });
       }
 
     } else if (finalMatch) {
       console.log(`\n🏁 Agent finished in ${loopCount} steps.`);
-      console.log(`📝 Verified Final Response: ${finalMatch[1]}`);
+      console.log(`📝 Final Answer: ${finalMatch[1]}`);
       keepGoing = false;
-    } 
-    // else {
-    //   console.log("⚠️ Model did not follow formatting rules. Forcing exit.");
-    //   keepGoing = false;
-    // }
+
+    } else {
+      // Model didn't follow format — nudge it
+      messages.push({
+        role: "user",
+        content: `Please continue. Use CALL: or FINAL_ANSWER: format only.`
+      });
+    }
+
     await overwriteFile(JSON.stringify(messages));
   }
 }
 
-async function safelyParseToolArgs(toolArgsString, toolName) {
+async function safelyParseToolArgs(toolArgsString, toolName, provider) {
   let currentString = toolArgsString;
-  const maxAttempts = 5;
+  const maxAttempts = 3;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      console.log(`Tool parse attempt ${attempt} for tool [${toolName}]`);
-      // Try parsing the current string
-      const validJsonString = currentString
+      const cleaned = currentString
         .replace(/:\s*NaN/g, ': 0')
-        .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":') // 1. Wrap unquoted keys in double quotes
-        .replace(/:\s*'([^']*)'/g, ': "$1"');// 2. Replace single quotes on values with double quotes
-      const toolArgs = JSON.parse(currentString);
+        .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":')
+        .replace(/:\s*'([^']*)'/g, ': "$1"');
+      const toolArgs = JSON.parse(cleaned);
       console.log(`Tool parsed [${toolName}] with args:`, toolArgs);
-      return toolArgs; // Success! Return the parsed object
+      return toolArgs;
 
     } catch (parseError) {
-      console.warn(`[Attempt ${attempt}/${maxAttempts}] JSON parse failed for ${toolName}: ${parseError.message}`);
-
-      // If we hit the limit, throw the final error
+      console.warn(`[Attempt ${attempt}/${maxAttempts}] Parse failed: ${parseError.message}`);
       if (attempt === maxAttempts) {
-        throw new Error(`Failed to parse toolArgs after ${maxAttempts} attempts. Original string: ${toolArgsString}`);
+        throw new Error(`Failed to parse after ${maxAttempts} attempts.`);
       }
-
-      // Ask Ollama to fix the malformed string
-      currentString = await askOllamaToFixJson(currentString, parseError.message);
+      currentString = await askAIToFixJson(provider, currentString, parseError.message);
     }
   }
 }
 
-async function askOllamaToFixJson(provider,badJsonString, errorMessage) {
-  const systemPrompt = `You are a strict JSON repair utility. 
-  Fix the syntax errors in the provided JSON string so it becomes valid, parseable JSON. 
-  Return ONLY the raw, corrected JSON string. 
-  Do NOT include markdown code blocks, backticks (\`\`\`), or explanations.`;
-
-  const userPrompt = `Error: ${errorMessage}\nMalformed JSON:\n${badJsonString}`;
-
-   const messages = [
-    { role: "system", content: systemPrompt },
-    { role: "user", content: userPrompt }
+async function askAIToFixJson(provider, badJsonString, errorMessage) {
+  const messages = [
+    { role: "system", content: "You are a JSON repair utility. Return ONLY the corrected JSON. No markdown, no explanation." },
+    { role: "user", content: `Fix this JSON:\nError: ${errorMessage}\nJSON: ${badJsonString}` }
   ];
 
   try {
-    const response = await callAI({
-      provider: provider,
-      messages: messages
-    });;
-
-    // Clean up any rogue formatting just in case
-    return response.response.trim().replace(/^```json|```$/g, '');
-  } catch (ollamaError) {
-    console.error('Ollama API error:', ollamaError.message);
-    // Return original string to let the next loop iteration handle the failure gracefully
+    const response = await callAI({ provider, messages });
+    return response.message.content.trim().replace(/^```json|```$/g, '');
+  } catch (err) {
     return badJsonString;
   }
 }
 
 async function overwriteFile(content) {
   try {
-    // 'w' flag opens the file for writing, clearing existing content first
     await writeFile("./messages_log.json", content, { flag: 'w', encoding: 'utf8' });
     console.log('File successfully updated.');
   } catch (error) {
     console.error('Error writing to file:', error.message);
   }
 }
-
-
-/**
- * Upload file matching curl -X POST -F "file=@image.png"
- * @param {string} filePath - Path to file from root (e.g., './image.png')
- * @param {string} url - Upload URL (default: 'http://192.168.70.89:3000/upload')
- * @returns {Promise<Object>} - Server response
- */

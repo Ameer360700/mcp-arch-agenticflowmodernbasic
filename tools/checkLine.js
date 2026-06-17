@@ -6,6 +6,7 @@ export const checkLineTool = {
     name: "check_line",
     description: "Checks whether a specific black straight line exists on the 800x480 canvas image named 'canvas.png'. " +
                  "you must Provide startX, startY, endX, and endY to verify if that line has been drawn." + 
+                 "Checks if a line exists on the canvas. Provide startX, startY, endX, endY." +
                  "Example: check_line({startX: 100, startY: 200, endX: 300, endY: 400})",
     parameters: {
       type: "object",
