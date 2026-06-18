@@ -8,6 +8,8 @@ import { drawArcTool } from './drawArc.js';
 import { checkArcTool } from './checkArc.js';
 import { drawRegularPolygonTool } from './drawRegularPolygon.js';
 import { checkRegularPolygonTool } from './checkRegularPolygon.js';
+import { drawEllipseTool } from './drawEllipse.js';
+import { checkEllipseTool } from './checkEllipse.js';
 
 const toolsList = [
   drawLineTool,
@@ -20,6 +22,8 @@ const toolsList = [
   checkArcTool,
   drawRegularPolygonTool,
   checkRegularPolygonTool,
+  drawEllipseTool,
+  checkEllipseTool,
 ];
 
 export const registry = {

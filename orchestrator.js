@@ -73,13 +73,15 @@ export async function runAgent(userPrompt, provider = 'ollama') {
     `- ALL coordinates must stay within X: 0-800, Y: 0-480.\n\n` +
  
     `AVAILABLE TOOLS:\n${toolSpecs}\n\n` +
- 
+
     `CRITICAL RULES:\n` +
     `1. After drawing any shape, you MUST use the matching check tool to confirm it was drawn, using the EXACT SAME coordinates you just used to draw it.\n` +
     `2. If a check returns exists: false, redraw it once with the same coordinates. If it still fails, move on — do not loop forever.\n` +
     `3. You MUST output exactly ONE CALL per turn. Outputting multiple CALL blocks in one response is a critical error.\n` +
-    `4. Never output a CALL and FINAL_ANSWER in the same response.\n` +
-    `5. Do NOT give FINAL_ANSWER until every shape in the plan has been drawn and checked.\n\n` +
+    `4. Never output a CALL and FINAL_ANSWER in the same response.\n` + 
+    `5. Do NOT give FINAL_ANSWER until EVERY SINGLE item from the provided plan has been drawn and verified.\n` +
+    `6. You MUST follow the plan exactly. If the plan has 14 items, you draw all 14 before finishing.\n` +
+    `7. If you feel done before finishing the plan, re-read the plan and continue with the next unfinished item.\n\n` +
  
     `FORMAT:\n` +
     `THOUGHT: [Your reasoning here]\n` +
