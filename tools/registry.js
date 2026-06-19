@@ -10,6 +10,10 @@ import { drawRegularPolygonTool } from './drawRegularPolygon.js';
 import { checkRegularPolygonTool } from './checkRegularPolygon.js';
 import { drawEllipseTool } from './drawEllipse.js';
 import { checkEllipseTool } from './checkEllipse.js';
+import { drawRoundedRectangleTool } from './drawRoundedRectangle.js';
+import { checkRoundedRectangleTool } from './checkRoundedRectangle.js';
+import { drawTextTool } from './drawText.js';
+import { checkTextTool } from './checkText.js';
 
 const toolsList = [
   drawLineTool,
@@ -24,6 +28,10 @@ const toolsList = [
   checkRegularPolygonTool,
   drawEllipseTool,
   checkEllipseTool,
+  drawTextTool,
+  checkTextTool,
+  drawRoundedRectangleTool,
+  checkRoundedRectangleTool,
 ];
 
 export const registry = {
