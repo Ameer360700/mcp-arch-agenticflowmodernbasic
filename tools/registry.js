@@ -14,6 +14,8 @@ import { drawRoundedRectangleTool } from './drawRoundedRectangle.js';
 import { checkRoundedRectangleTool } from './checkRoundedRectangle.js';
 import { drawTextTool } from './drawText.js';
 import { checkTextTool } from './checkText.js';
+import { drawBezierCurveTool } from './drawBezierCurve.js';
+import { checkBezierCurveTool } from './checkBezierCurve.js';
 
 const toolsList = [
   drawLineTool,
@@ -32,6 +34,8 @@ const toolsList = [
   checkTextTool,
   drawRoundedRectangleTool,
   checkRoundedRectangleTool,
+  drawBezierCurveTool,
+  checkBezierCurveTool,
 ];
 
 export const registry = {

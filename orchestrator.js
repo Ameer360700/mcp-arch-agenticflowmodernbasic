@@ -37,6 +37,8 @@ async function planDrawing(userPrompt, provider) {
     `- For regular shapes (triangle, square, pentagon, hexagon, octagon etc.), ALWAYS use draw_regular_polygon with the correct sides count instead of drawing individual lines.\n` +
     `- For text labels or numbers, use draw_text.\n` +
     `- Calculate coordinates precisely so shapes connect and align correctly.\n` +
+    `- When placing a roof triangle on top of a building, center the draw_regular_polygon horizontally over the building body, with its center point positioned ABOVE the top edge of the body rectangle.\n` +
+    `- draw_bezier_curve: points (array of {x, y} objects, min 3 for smooth curve, 4 for cubic), lineColor. Use for smooth flowing curves like car roofs, waves, arches.\n` +
     `- lineColor must be "black".`;
 
   const messages = [
@@ -123,7 +125,7 @@ export async function runAgent(userPrompt, provider = 'ollama') {
 
     messages.push({ role: "assistant", content: reply });
 
-    const callMatch = reply.match(/CALL:\s*(\w+)\((\{[\s\S]*?\})\s*\)/);
+    const callMatch = reply.match(/CALL:\s*(\w+)\((\{[\s\S]*\})\s*\)/);
     const finalMatch = reply.match(/FINAL_ANSWER:\s*(.+)/);
 
     if (callMatch) {
