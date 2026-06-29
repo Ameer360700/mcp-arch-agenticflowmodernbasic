@@ -29,7 +29,8 @@ async function planDrawing(userPrompt, provider) {
     `- draw_regular_polygon: centerX, centerY, radius, sides (3-8), lineColor, rotation (optional), isStar (optional)\n` +
     `- draw_ellipse: centerX, centerY, radiusX, radiusY, lineColor, rotation (optional)\n` +
     `- draw_rounded_rectangle: x, y, width, height, cornerRadius, lineColor\n` +
-    `- draw_text: text, x, y, fontSize, textColor (black/red/blue/green), alignment (optional)\n\n` +
+    `- draw_text: text, x, y, fontSize, textColor (black/red/blue/green), alignment (optional)\n` +
+    `- draw_bezier_curve: points (array of {x, y} objects, min 3 for smooth curve, 4 for cubic), lineColor\n\n` +
     `PLANNING RULES:\n` +
     `- Output ONLY a valid JSON array. No explanation, no markdown, no backticks.\n` +
     `- ALL coordinates must stay within X: 0-800, Y: 0-480.\n` +
@@ -38,11 +39,25 @@ async function planDrawing(userPrompt, provider) {
     `- For text labels or numbers, use draw_text.\n` +
     `- Calculate coordinates precisely so shapes connect and align correctly.\n` +
     `- When placing a roof triangle on top of a building, center the draw_regular_polygon horizontally over the building body, with its center point positioned ABOVE the top edge of the body rectangle.\n` +
-    `- draw_bezier_curve: points (array of {x, y} objects, min 3 for smooth curve, 4 for cubic), lineColor. Use for smooth flowing curves like car roofs, waves, arches.\n` +
+    `- For smooth flowing curves (car roofs, waves, arches, hills), use draw_bezier_curve.\n` +
+    `- When drawing top-down views (court, map, floor plan), X axis is LEFT-RIGHT, Y axis is TOP-BOTTOM.\n` +
+    `- "Left and right ends" of a horizontal rectangle means LEFT SIDE (low X) and RIGHT SIDE (high X).\n` +
+    `- When labeling concentric or sequential shapes, ALWAYS include ALL labels. Never skip any number in a sequence.\n` +
+    `- When shapes must connect (wires, frames, paths), calculate endpoint coordinates so they share the exact same x,y point.\n` +
     `- lineColor must be "black".`;
 
   const messages = [
-    { role: "system", content: "You are a precise drawing coordinate planner. Output only a valid JSON array. No explanation, no markdown." },
+    {
+      role: "system",
+      content:
+        "You are a precise drawing coordinate planner. Output only a valid JSON array. No explanation, no markdown.\n\n" +
+        "CRITICAL DECISION RULE:\n" +
+        "- User wants to SEE/SHOW/DISPLAY something real → use draw_image with keyword ONLY. NEVER provide a url field.\n" +
+        "- User wants to DRAW something geometrically → use geometric tools\n\n" +
+        "Examples:\n" +
+        "'draw a house' → use rectangles and polygons\n" +
+        "'draw a cat' → use circles and curves"
+    },
     { role: "user", content: planPrompt }
   ];
 
@@ -113,7 +128,7 @@ export async function runAgent(userPrompt, provider = 'ollama') {
 
   let keepGoing = true;
   let loopCount = 0;
-  let planIndex = 0; // tracks completed plan items
+  let planIndex = 0;
 
   while (keepGoing && loopCount < MAX_ITERATIONS) {
     loopCount++;
@@ -143,7 +158,6 @@ export async function runAgent(userPrompt, provider = 'ollama') {
         const checkToolName = `check_${toolName.replace('draw_', '')}`;
 
         if (isDrawTool) {
-          // After draw: ask to verify
           messages.push({
             role: "user",
             content:
@@ -151,7 +165,6 @@ export async function runAgent(userPrompt, provider = 'ollama') {
               `Now verify using ${checkToolName} with EXACT same coordinates: ${toolArgsString}`
           });
         } else {
-          // After check: increment index and tell model what's next
           planIndex++;
           const remaining = drawingPlan.slice(planIndex);
 
@@ -190,7 +203,6 @@ export async function runAgent(userPrompt, provider = 'ollama') {
       keepGoing = false;
 
     } else {
-      // Empty or unrecognised response — nudge back
       const remaining = drawingPlan.slice(planIndex);
       messages.push({
         role: "user",
