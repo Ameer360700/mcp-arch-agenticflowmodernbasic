@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node --inspect index.js"
+    "start": "node --inspect index.js",
+    "server": "node server.js"
   },
   "keywords": [],
   "author": "",
@@ -14,7 +15,9 @@
     "@modelcontextprotocol/sdk": "^0.6.0",
     "axios": "^1.17.0",
     "canvas": "^3.2.3",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "ollama": "^0.6.3",
     "openai": "^6.42.0",
     "zod": "^4.4.3"

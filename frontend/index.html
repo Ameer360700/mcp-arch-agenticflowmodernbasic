@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumea — Visual intelligence chatbot</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    background: #0a1628;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    color: rgba(200, 230, 255, 0.9);
+  }
+
+  body { display: flex; flex-direction: column; }
+
+  .scene-wrapper {
+    flex: 1; width: 100%; min-height: 0;
+    position: relative; overflow: hidden; background: transparent;
+  }
+
+  .layer { display: none; width: 100%; height: 100%; opacity: 0; transition: opacity 0.4s ease; }
+  .layer.active { display: block; opacity: 1; }
+
+  /* ─── LANDING ─── */
+  #landing {
+    height: 100%;
+    background: linear-gradient(170deg, #0a1628 0%, #0d2147 30%, #0e3168 55%, #1a5fa8 80%, #2e8ad4 100%);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    position: relative;
+  }
+  #landing.active { display: flex; }
+
+  #landing::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 12% 8%, rgba(200,230,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 27% 15%, rgba(200,230,255,0.5) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 43% 5%, rgba(200,230,255,0.8) 0%, transparent 100%),
+      radial-gradient(1px 1px at 67% 11%, rgba(200,230,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 81% 7%, rgba(200,230,255,0.5) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 91% 19%, rgba(200,230,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 55% 22%, rgba(200,230,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 6% 33%, rgba(200,230,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 97% 38%, rgba(200,230,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 34% 40%, rgba(200,230,255,0.3) 0%, transparent 100%);
+    pointer-events: none;
+  }
+
+  .topbar-landing {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 18px 28px; display: flex; align-items: center; gap: 10px;
+  }
+
+  .logo-mark { width: 30px; height: 30px; flex-shrink: 0; }
+
+  .logo-name {
+    font-size: 15px; font-weight: 500; letter-spacing: 0.08em;
+    color: rgba(180, 220, 255, 0.9); text-transform: uppercase;
+  }
+
+  .center-logo {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    margin-bottom: 80px; position: relative; z-index: 1;
+  }
+
+  .center-logo .big-logo {
+    width: 90px; height: 90px;
+    filter: drop-shadow(0 0 18px rgba(90,190,255,0.45));
+    animation: breathe 4s ease-in-out infinite;
+  }
+
+  @keyframes breathe {
+    0%, 100% { filter: drop-shadow(0 0 14px rgba(90,190,255,0.35)); }
+    50%       { filter: drop-shadow(0 0 28px rgba(90,190,255,0.65)); }
+  }
+
+  .tagline {
+    font-size: 12px; font-weight: 300; letter-spacing: 0.24em;
+    color: rgba(160, 210, 255, 0.65); text-transform: uppercase;
+  }
+
+  .landing-input-wrap {
+    position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+    width: min(520px, 90%); z-index: 2;
+  }
+
+  .landing-input-row {
+    display: flex; align-items: center;
+    background: rgba(10, 28, 60, 0.6);
+    border: 1px solid rgba(100, 170, 255, 0.25);
+    border-radius: 40px; padding: 10px 10px 10px 22px;
+    backdrop-filter: blur(12px); transition: border-color 0.2s;
+  }
+  .landing-input-row:focus-within { border-color: rgba(100, 170, 255, 0.55); }
+  .landing-input-row input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: rgba(200, 230, 255, 0.9); font-size: 14px; font-family: 'Inter', sans-serif;
+    font-weight: 300; caret-color: rgba(100,190,255,0.8);
+  }
+  .landing-input-row input::placeholder { color: rgba(130, 180, 230, 0.4); }
+
+  .send-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(50, 130, 220, 0.75); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, transform 0.1s; flex-shrink: 0;
+  }
+  .send-btn:hover  { background: rgba(70, 155, 240, 0.9); }
+  .send-btn:active { transform: scale(0.95); }
+  .send-btn svg    { width: 15px; height: 15px; }
+
+  /* ─── INNER ─── */
+  #inner {
+    height: 100%;
+    background: linear-gradient(160deg, #081424 0%, #0b1e3d 25%, #0d2c59 50%, #103565 70%, #174d8a 100%);
+    display: none;
+    grid-template-rows: 48px 1fr 68px;
+    grid-template-columns: 220px 1fr;
+  }
+  #inner.active { display: grid; }
+
+  .topbar-inner {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 10px; padding: 0 20px;
+    border-bottom: 1px solid rgba(80, 140, 220, 0.12);
+    background: rgba(5, 15, 35, 0.5);
+  }
+
+  .inner-logo-sm { width: 22px; height: 22px; flex-shrink: 0; }
+
+  .inner-name {
+    font-size: 13px; font-weight: 500; letter-spacing: 0.1em;
+    color: rgba(150,200,255,0.75); text-transform: uppercase;
+  }
+
+  .topbar-inner .spacer { flex: 1; }
+
+  .theme-toggle-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid rgba(80,150,255,0.2);
+    background: rgba(10,28,60,0.4);
+    cursor: pointer; margin-right: 12px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, border-color 0.2s; flex-shrink: 0;
+  }
+  .theme-toggle-btn:hover { background: rgba(40,90,180,0.3); }
+  .theme-toggle-btn svg   { width: 16px; height: 16px; }
+
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #3ddfaf; box-shadow: 0 0 6px rgba(61,223,175,0.6);
+  }
+
+  .status-label { font-size: 11px; color: rgba(100,180,240,0.5); letter-spacing: 0.06em; }
+
+  .sidebar {
+    background: rgba(6, 18, 42, 0.55);
+    border-right: 1px solid rgba(80, 140, 220, 0.1);
+    padding: 16px 12px;
+    display: flex; flex-direction: column; gap: 6px;
+    overflow-y: auto;
+  }
+
+  .sidebar-section-label {
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(100,160,220,0.4); padding: 8px 8px 4px;
+  }
+
+  .sidebar-item {
+    padding: 8px 10px; border-radius: 8px;
+    font-size: 12px; color: rgba(160, 210, 255, 0.6);
+    cursor: pointer; transition: background 0.15s, color 0.15s;
+    display: flex; align-items: center; gap: 8px;
+    border: 1px solid transparent;
+  }
+  .sidebar-item:hover { background: rgba(60,120,210,0.15); color: rgba(190,225,255,0.85); }
+  .sidebar-item.active {
+    background: rgba(40, 100, 200, 0.2);
+    border-color: rgba(80,150,240,0.2);
+    color: rgba(190,230,255,0.9);
+  }
+
+  .sidebar-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(100,180,255,0.4); flex-shrink: 0; }
+
+  .canvas-area {
+    padding: 24px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto;
+  }
+
+  .canvas-msg { display: flex; gap: 12px; align-items: flex-start; }
+
+  .avatar-ring {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    border: 1px solid rgba(80,160,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(20,60,140,0.5);
+  }
+  .avatar-ring svg { width: 14px; height: 14px; }
+
+  .user-bubble {
+    background: rgba(30,80,180,0.25);
+    border: 1px solid rgba(80,150,255,0.18);
+    border-radius: 16px 16px 4px 16px;
+    padding: 9px 14px; font-size: 13px; color: rgba(200,230,255,0.85);
+    max-width: 360px; line-height: 1.5;
+  }
+
+  .canvas-reply {
+    margin-left: 42px;
+    background: rgba(10, 30, 70, 0.5);
+    border: 1px solid rgba(80, 150, 240, 0.2);
+    border-radius: 4px 16px 16px 16px;
+    overflow: hidden; max-width: 420px;
+  }
+
+  .canvas-label {
+    padding: 8px 14px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: rgba(100,180,255,0.5);
+    border-bottom: 1px solid rgba(80,150,240,0.1);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .canvas-label .pulse {
+    width: 5px; height: 5px; border-radius: 50%; background: #56c8ff;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  .canvas-preview {
+    width: 100%; height: 180px;
+    background: linear-gradient(135deg, rgba(8,20,50,0.95) 0%, rgba(15,40,90,0.9) 100%);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+
+  .canvas-text-reply {
+    padding: 10px 14px; font-size: 12px; color: rgba(160,210,255,0.7);
+    line-height: 1.6; border-top: 1px solid rgba(80,150,240,0.1);
+  }
+
+  .inner-input-bar {
+    grid-column: 1 / -1;
+    border-top: 1px solid rgba(80, 140, 220, 0.1);
+    background: rgba(5, 15, 36, 0.6);
+    display: flex; align-items: center; padding: 0 16px;
+  }
+
+  .inner-input-row {
+    flex: 1; display: flex; align-items: center;
+    background: rgba(12, 32, 72, 0.7);
+    border: 1px solid rgba(80,150,255,0.15);
+    border-radius: 30px; padding: 8px 8px 8px 18px;
+    margin: 10px 0; transition: border-color 0.2s;
+  }
+  .inner-input-row:focus-within { border-color: rgba(80,150,255,0.4); }
+  .inner-input-row input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: rgba(200,230,255,0.85); font-size: 13px; font-family: 'Inter', sans-serif;
+    font-weight: 300; caret-color: rgba(100,190,255,0.8);
+  }
+  .inner-input-row input::placeholder { color: rgba(100,160,220,0.35); }
+
+  .send-btn-inner {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(40,110,210,0.65); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s; flex-shrink: 0;
+  }
+  .send-btn-inner:hover { background: rgba(60,140,240,0.85); }
+  .send-btn-inner svg   { width: 13px; height: 13px; }
+
+  /* ── LIGHT THEME ── */
+  body.light { background: #c8dcf5; color: #0d2147; }
+  body.light #landing { background: linear-gradient(170deg, #c2d8f5 0%, #aac8f0 25%, #8eb4e8 50%, #6a9cdc 75%, #4a82cc 100%); }
+  body.light #landing::before { display: none; }
+  body.light .logo-name { color: rgba(10, 40, 110, 0.9); }
+  body.light .tagline { color: rgba(10, 40, 110, 0.75); }
+  body.light .landing-input-row { background: rgba(255,255,255,0.55); border-color: rgba(60,120,220,0.3); backdrop-filter: blur(16px); }
+  body.light .landing-input-row:focus-within { border-color: rgba(40,100,210,0.6); }
+  body.light .landing-input-row input { color: rgba(10,35,110,0.9); }
+  body.light .landing-input-row input::placeholder { color: rgba(40,90,180,0.4); }
+  body.light .send-btn { background: rgba(30,90,210,0.8); }
+  body.light .send-btn:hover { background: rgba(20,75,195,0.95); }
+  body.light #inner { background: linear-gradient(160deg, #dce8f7 0%, #c8daf2 25%, #b8cfe8 50%, #a8c4e0 70%, #90b0d4 100%); }
+  body.light .topbar-inner { background: rgba(220,235,255,0.8); border-bottom-color: rgba(80,130,210,0.2); }
+  body.light .inner-name { color: rgba(15,45,110,0.85); }
+  body.light .status-label { color: rgba(20,60,150,0.65); }
+  body.light .sidebar { background: rgba(195,218,250,0.55); border-right-color: rgba(80,130,210,0.15); }
+  body.light .sidebar-section-label { color: rgba(30,70,160,0.55); }
+  body.light .sidebar-item { color: rgba(15,45,120,0.75); }
+  body.light .sidebar-item:hover { background: rgba(80,140,220,0.15); color: rgba(10,35,100,0.9); }
+  body.light .sidebar-item.active { background: rgba(60,110,210,0.18); border-color: rgba(60,120,220,0.28); color: rgba(10,30,100,0.95); }
+  body.light .user-bubble { background: rgba(190,215,255,0.45); border-color: rgba(80,140,220,0.28); color: rgba(10,35,100,0.9); }
+  body.light .avatar-ring { background: rgba(160,200,255,0.45); border-color: rgba(80,140,220,0.3); }
+  body.light .canvas-reply { background: rgba(210,228,255,0.6); border-color: rgba(80,140,220,0.28); }
+  body.light .canvas-label { color: rgba(20,60,160,0.65); border-bottom-color: rgba(80,140,220,0.15); }
+  body.light .canvas-preview { background: linear-gradient(135deg, rgba(180,210,250,0.9) 0%, rgba(150,190,240,0.95) 100%); }
+  body.light .canvas-text-reply { color: rgba(15,50,130,0.8); border-top-color: rgba(80,140,220,0.15); }
+  body.light .inner-input-bar { background: rgba(200,222,252,0.7); border-top-color: rgba(80,130,210,0.18); }
+  body.light .inner-input-row { background: rgba(235,243,255,0.85); border-color: rgba(80,140,220,0.22); }
+  body.light .inner-input-row:focus-within { border-color: rgba(40,100,210,0.45); }
+  body.light .inner-input-row input { color: rgba(10,35,100,0.9); }
+  body.light .inner-input-row input::placeholder { color: rgba(60,110,180,0.45); }
+  body.light .send-btn-inner { background: rgba(35,100,210,0.65); }
+  body.light .send-btn-inner:hover { background: rgba(25,85,195,0.82); }
+  body.light .theme-toggle-btn { border-color: rgba(40,90,180,0.28); background: rgba(190,215,255,0.4); }
+  body.light .theme-toggle-btn:hover { background: rgba(170,200,255,0.55); }
+  body.light .topbar-landing .logo-name { color: rgba(10,35,110,0.95); }
+  body.light .topbar-landing .theme-toggle-btn { border-color: rgba(20,70,180,0.35); background: rgba(255,255,255,0.35); }
+
+  /* SVG logo classes */
+  .lsvg-core { fill: rgba(140,210,255,0.9); }
+  .lsvg-arc1 { stroke: rgba(90,175,255,0.6); }
+  .lsvg-arc2 { stroke: rgba(90,175,255,0.35); }
+  .lsvg-node { fill: rgba(150,220,255,0.5); }
+  body.light .lsvg-core { fill: #1a4a9a; }
+  body.light .lsvg-arc1 { stroke: #2a5ab0; }
+  body.light .lsvg-arc2 { stroke: #3a6ac0; }
+  body.light .lsvg-node { fill: #2550a0; }
+
+  .bsvg-outer { fill: rgba(140,215,255,0.92); }
+  .bsvg-inner { fill: rgba(60,155,255,0.9); }
+  .bsvg-orbit { stroke: rgba(90,175,255,0.45); }
+  .bsvg-o2    { stroke: rgba(90,175,255,0.3); }
+  .bsvg-o3    { stroke: rgba(90,175,255,0.25); }
+  .bsvg-node  { fill: rgba(140,215,255,0.6); }
+  .bsvg-node2 { fill: rgba(140,215,255,0.45); }
+  .bsvg-ring  { stroke: rgba(80,155,240,0.12); }
+  body.light .bsvg-outer { fill: #1a5ab8; }
+  body.light .bsvg-inner { fill: #0f3a8a; }
+  body.light .bsvg-orbit { stroke: rgba(15,60,150,0.5); }
+  body.light .bsvg-o2    { stroke: rgba(15,60,150,0.35); }
+  body.light .bsvg-o3    { stroke: rgba(15,60,150,0.28); }
+  body.light .bsvg-node  { fill: #1a4a9e; }
+  body.light .bsvg-node2 { fill: #2255a8; }
+  body.light .bsvg-ring  { stroke: rgba(15,50,130,0.2); }
+
+  body.light .center-logo .big-logo {
+    filter: drop-shadow(0 0 14px rgba(20,80,200,0.25));
+    animation: breathe-light 4s ease-in-out infinite;
+  }
+  @keyframes breathe-light {
+    0%, 100% { filter: drop-shadow(0 0 10px rgba(20,80,200,0.2)); }
+    50%       { filter: drop-shadow(0 0 22px rgba(20,80,200,0.45)); }
+  }
+
+/* Fullscreen overlay */
+.img-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+.img-overlay.active { display: flex; }
+.img-overlay img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 0 40px rgba(80,150,255,0.3);
+}
+</style>
+</head>
+<body>
+
+<div class="scene-wrapper" role="main">
+
+  <!-- LANDING -->
+  <div id="landing" class="layer active">
+    <div class="topbar-landing">
+      <svg class="logo-mark" viewBox="0 0 30 30" fill="none">
+        <circle cx="15" cy="15" r="3.2" class="lsvg-core"/>
+        <path d="M15 4 Q22 9 22 15 Q22 21 15 26 Q8 21 8 15 Q8 9 15 4Z" class="lsvg-arc1" stroke-width="1" fill="none"/>
+        <path d="M4 15 Q9 8 15 8 Q21 8 26 15 Q21 22 15 22 Q9 22 4 15Z" class="lsvg-arc2" stroke-width="0.8" fill="none"/>
+        <circle cx="15" cy="6.5" r="1.4" class="lsvg-node"/>
+        <circle cx="23.5" cy="19.5" r="1" class="lsvg-node"/>
+        <circle cx="6.5" cy="19.5" r="1" class="lsvg-node"/>
+      </svg>
+      <span class="logo-name">Lumea</span>
+      <div style="flex:1"></div>
+      <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+        <svg id="icon-moon-landing" viewBox="0 0 20 20" fill="none">
+          <path d="M17 12.5A7 7 0 0 1 7.5 3a7.002 7.002 0 0 0 0 14A7 7 0 0 0 17 12.5Z" fill="rgba(160,210,255,0.85)" stroke="rgba(130,190,255,0.5)" stroke-width="0.8"/>
+        </svg>
+        <svg id="icon-sun-landing" viewBox="0 0 20 20" fill="none" style="display:none">
+          <circle cx="10" cy="10" r="4" fill="#1a4a8a"/>
+          <g stroke="#1a4a8a" stroke-width="1.4" stroke-linecap="round">
+            <line x1="10" y1="2" x2="10" y2="4"/><line x1="10" y1="16" x2="10" y2="18"/>
+            <line x1="2" y1="10" x2="4" y2="10"/><line x1="16" y1="10" x2="18" y2="10"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="14.36" y1="14.36" x2="15.78" y2="15.78"/>
+            <line x1="4.22" y1="15.78" x2="5.64" y2="14.36"/><line x1="14.36" y1="5.64" x2="15.78" y2="4.22"/>
+          </g>
+        </svg>
+      </button>
+    </div>
+
+    <div class="center-logo">
+      <svg class="big-logo" viewBox="0 0 90 90" fill="none">
+        <circle cx="45" cy="45" r="10" class="bsvg-outer"/>
+        <circle cx="45" cy="45" r="6" class="bsvg-inner"/>
+        <ellipse cx="45" cy="45" rx="28" ry="12" class="bsvg-orbit" stroke-width="1.2" fill="none" transform="rotate(-30 45 45)"/>
+        <ellipse cx="45" cy="45" rx="28" ry="12" class="bsvg-orbit bsvg-o2" stroke-width="0.9" fill="none" transform="rotate(30 45 45)"/>
+        <ellipse cx="45" cy="45" rx="12" ry="32" class="bsvg-orbit bsvg-o3" stroke-width="0.9" fill="none"/>
+        <circle cx="17" cy="45" r="2.5" class="bsvg-node"/>
+        <circle cx="73" cy="45" r="2.5" class="bsvg-node"/>
+        <circle cx="62" cy="21" r="2" class="bsvg-node2"/>
+        <circle cx="28" cy="69" r="2" class="bsvg-node2"/>
+        <circle cx="45" cy="45" r="40" class="bsvg-ring" stroke-width="0.8" fill="none" stroke-dasharray="4 6"/>
+      </svg>
+      <span class="tagline">Visual Vector Drawing Chatbot · MCP powered</span>
+    </div>
+
+    <div class="landing-input-wrap">
+      <div class="landing-input-row">
+        <input type="text" id="landing-input" placeholder="Describe what vector image you want to visualize…" autocomplete="off"/>
+        <button class="send-btn" onclick="goToInner()" aria-label="Send">
+          <svg viewBox="0 0 15 15" fill="none">
+            <path d="M2 7.5H13M13 7.5L8.5 3M13 7.5L8.5 12" stroke="rgba(200,235,255,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INNER -->
+  <div id="inner" class="layer">
+    <div class="topbar-inner">
+      <svg class="inner-logo-sm" viewBox="0 0 30 30" fill="none">
+        <circle cx="15" cy="15" r="3.2" fill="rgba(120,195,255,0.85)"/>
+        <path d="M15 4 Q22 9 22 15 Q22 21 15 26 Q8 21 8 15 Q8 9 15 4Z" stroke="rgba(90,175,255,0.5)" stroke-width="1" fill="none"/>
+        <path d="M4 15 Q9 8 15 8 Q21 8 26 15 Q21 22 15 22 Q9 22 4 15Z" stroke="rgba(90,175,255,0.3)" stroke-width="0.8" fill="none"/>
+      </svg>
+      <span class="inner-name">Lumea</span>
+      <div class="spacer"></div>
+      <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+        <svg id="icon-moon" viewBox="0 0 20 20" fill="none">
+          <path d="M17 12.5A7 7 0 0 1 7.5 3a7.002 7.002 0 0 0 0 14A7 7 0 0 0 17 12.5Z" fill="rgba(160,210,255,0.85)" stroke="rgba(130,190,255,0.5)" stroke-width="0.8"/>
+        </svg>
+        <svg id="icon-sun" viewBox="0 0 20 20" fill="none" style="display:none">
+          <circle cx="10" cy="10" r="4" fill="#1a4a8a"/>
+          <g stroke="#1a4a8a" stroke-width="1.4" stroke-linecap="round">
+            <line x1="10" y1="2" x2="10" y2="4"/><line x1="10" y1="16" x2="10" y2="18"/>
+            <line x1="2" y1="10" x2="4" y2="10"/><line x1="16" y1="10" x2="18" y2="10"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="14.36" y1="14.36" x2="15.78" y2="15.78"/>
+            <line x1="4.22" y1="15.78" x2="5.64" y2="14.36"/><line x1="14.36" y1="5.64" x2="15.78" y2="4.22"/>
+          </g>
+        </svg>
+      </button>
+      <div class="status-dot"></div>
+      <span class="status-label">Canvas active</span>
+    </div>
+
+    <div class="sidebar">
+      <span class="sidebar-section-label">Sessions</span>
+      <div class="sidebar-item active">
+        <div class="sidebar-dot" style="background:rgba(80,180,255,0.7)"></div>
+        <span id="sidebar-first-prompt">New session</span>
+      </div>
+      <span class="sidebar-section-label" style="margin-top:8px">Tools</span>
+      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawLine</span></div>
+      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawArc</span></div>
+      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawEllipse</span></div>
+      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawRectangle</span></div>
+      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawRoundedRectangle</span></div>
+      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawRegularPolygon</span></div>
+      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawBezierCurve</span></div>
+      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawCircle</span></div>
+      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawText</span></div>
+    </div>
+
+    <div class="canvas-area" id="canvas-area"></div>
+
+    <div class="inner-input-bar">
+      <div class="inner-input-row">
+        <input type="text" id="inner-input" placeholder="Follow up or refine the canvas…" autocomplete="off"/>
+        <button class="send-btn-inner" id="send-btn-inner" aria-label="Send">
+          <svg viewBox="0 0 13 13" fill="none">
+            <path d="M1.5 6.5H11.5M11.5 6.5L7.5 2.5M11.5 6.5L7.5 10.5" stroke="rgba(200,235,255,0.9)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── Layer switching ──
+  function showLayer(id) {
+    document.querySelectorAll('.layer').forEach(l => l.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ── Landing → Inner ──
+  async function goToInner() {
+    const val = document.getElementById('landing-input').value.trim();
+    if (!val) return;
+    document.getElementById('sidebar-first-prompt').textContent = val.length > 22 ? val.slice(0,22)+'…' : val;
+    showLayer('inner');
+    setTimeout(() => document.getElementById('inner-input').focus(), 100);
+    await sendPrompt(val);
+  }
+
+  // Enter key on landing input
+  document.getElementById('landing-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') goToInner();
+  });
+
+  // Enter key on inner input
+  document.getElementById('inner-input').addEventListener('keydown', async e => {
+    if (e.key === 'Enter' && e.target.value.trim()) {
+      const prompt = e.target.value.trim();
+      e.target.value = '';
+      await sendPrompt(prompt);
+    }
+  });
+
+  // Send button on inner input
+  document.getElementById('send-btn-inner').addEventListener('click', async () => {
+    const input = document.getElementById('inner-input');
+    const prompt = input.value.trim();
+    if (!prompt) return;
+    input.value = '';
+    await sendPrompt(prompt);
+  });
+
+  // ── Theme toggle ──
+  function toggleTheme() {
+    const isLight = document.body.classList.toggle('light');
+    document.getElementById('icon-moon').style.display         = isLight ? 'none'  : 'block';
+    document.getElementById('icon-sun').style.display          = isLight ? 'block' : 'none';
+    document.getElementById('icon-moon-landing').style.display = isLight ? 'none'  : 'block';
+    document.getElementById('icon-sun-landing').style.display  = isLight ? 'block' : 'none';
+  }
+
+  // ── Send prompt to backend ──
+  async function sendPrompt(prompt) {
+    const area = document.getElementById('canvas-area');
+    const loadingId = 'loading-' + Date.now();
+
+    // Status → drawing
+    document.querySelector('.status-label').textContent = 'Drawing…';
+    document.querySelector('.status-dot').style.background = '#ffaa44';
+
+    // Add user bubble
+    area.innerHTML += `
+      <div class="canvas-msg">
+        <div class="avatar-ring">
+          <svg viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="5" r="2.5" stroke="rgba(140,200,255,0.7)" stroke-width="1"/>
+            <path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="rgba(140,200,255,0.7)" stroke-width="1" stroke-linecap="round" fill="none"/>
+          </svg>
+        </div>
+        <div class="user-bubble">${prompt}</div>
+      </div>`;
+
+    // Add loading card
+    area.innerHTML += `
+      <div id="${loadingId}" class="canvas-reply">
+        <div class="canvas-label"><div class="pulse"></div>drawing · please wait…</div>
+        <div class="canvas-preview" style="display:flex;align-items:center;justify-content:center">
+          <span style="color:rgba(100,180,255,0.5);font-size:12px;letter-spacing:0.1em">Generating canvas…</span>
+        </div>
+      </div>`;
+
+    setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
+    
+    try {
+      const res = await fetch('/draw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, provider: 'deepseek' })
+      });
+
+      const data = await res.json();
+      document.getElementById(loadingId)?.remove();
+
+      if (data.status === 'success') {
+        area.innerHTML += `
+          <div class="canvas-reply">
+            <div class="canvas-label"><div class="pulse"></div>canvas · rendered output</div>
+            <div class="canvas-preview" style="padding:0">
+              <img src="${data.canvasUrl}" style="width:100%;height:100%;object-fit:contain;cursor:zoom-in" alt="canvas output" onclick="openOverlay('${data.canvasUrl}')"/>
+            </div>
+            <div class="canvas-text-reply">Drawing complete · ${prompt}</div>
+          </div>`;
+      } else {
+        area.innerHTML += `
+          <div class="canvas-reply">
+            <div class="canvas-text-reply" style="color:rgba(255,120,120,0.8)">❌ Error: ${data.error}</div>
+          </div>`;
+      }
+
+    } catch (err) {
+      document.getElementById(loadingId)?.remove();
+      area.innerHTML += `
+        <div class="canvas-reply">
+          <div class="canvas-text-reply" style="color:rgba(255,120,120,0.8)">❌ Connection error. Is the server running?</div>
+        </div>`;
+    }
+
+    // Status → active
+    document.querySelector('.status-label').textContent = 'Canvas active';
+    document.querySelector('.status-dot').style.background = '#3ddfaf';
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function openOverlay(src) {
+  document.getElementById('overlay-img').src = src;
+  document.getElementById('img-overlay').classList.add('active');
+}
+
+function closeOverlay() {
+  document.getElementById('img-overlay').classList.remove('active');
+}
+
+// Close on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeOverlay();
+});
+</script>
+
+<div class="img-overlay" id="img-overlay" onclick="closeOverlay()">
+  <img id="overlay-img" src="" alt="full view"/>
+</div>
+
+</body>
+</html>
