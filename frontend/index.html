@@ -3,381 +3,632 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lumea — Visual intelligence chatbot</title>
+<title>Lumea — Agentic Drawing System</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body {
-    height: 100%;
-    width: 100%;
-    background: #0a1628;
+    height: 100%; width: 100%;
+    background: #07111f;
     overflow: hidden;
     font-family: 'Inter', sans-serif;
-    color: rgba(200, 230, 255, 0.9);
+    color: rgba(200, 225, 255, 0.88);
   }
 
   body { display: flex; flex-direction: column; }
 
-  .scene-wrapper {
-    flex: 1; width: 100%; min-height: 0;
-    position: relative; overflow: hidden; background: transparent;
-  }
+  /* ── LAYERS ── */
+  .layer { display: none; width: 100%; height: 100%; }
+  .layer.active { display: block; }
 
-  .layer { display: none; width: 100%; height: 100%; opacity: 0; transition: opacity 0.4s ease; }
-  .layer.active { display: block; opacity: 1; }
-
-  /* ─── LANDING ─── */
+  /* ══════════════════════════════════════
+     LANDING
+  ══════════════════════════════════════ */
   #landing {
     height: 100%;
-    background: linear-gradient(170deg, #0a1628 0%, #0d2147 30%, #0e3168 55%, #1a5fa8 80%, #2e8ad4 100%);
-    display: none; flex-direction: column; align-items: center; justify-content: center;
-    position: relative;
+    background: radial-gradient(ellipse 80% 60% at 50% 70%, #0d2e5c 0%, #07111f 70%);
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
   }
   #landing.active { display: flex; }
 
+  /* grid lines */
   #landing::before {
-    content: ''; position: absolute; inset: 0;
+    content: '';
+    position: absolute; inset: 0;
     background-image:
-      radial-gradient(1px 1px at 12% 8%, rgba(200,230,255,0.7) 0%, transparent 100%),
-      radial-gradient(1px 1px at 27% 15%, rgba(200,230,255,0.5) 0%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 43% 5%, rgba(200,230,255,0.8) 0%, transparent 100%),
-      radial-gradient(1px 1px at 67% 11%, rgba(200,230,255,0.6) 0%, transparent 100%),
-      radial-gradient(1px 1px at 81% 7%, rgba(200,230,255,0.5) 0%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 91% 19%, rgba(200,230,255,0.7) 0%, transparent 100%),
-      radial-gradient(1px 1px at 55% 22%, rgba(200,230,255,0.4) 0%, transparent 100%),
-      radial-gradient(1px 1px at 6% 33%, rgba(200,230,255,0.5) 0%, transparent 100%),
-      radial-gradient(1px 1px at 97% 38%, rgba(200,230,255,0.4) 0%, transparent 100%),
-      radial-gradient(1px 1px at 34% 40%, rgba(200,230,255,0.3) 0%, transparent 100%);
+      linear-gradient(rgba(50,120,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(50,120,255,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%);
+    pointer-events: none;
+  }
+
+  /* glow orb */
+  #landing::after {
+    content: '';
+    position: absolute;
+    width: 500px; height: 300px;
+    background: radial-gradient(ellipse, rgba(40,100,255,0.12) 0%, transparent 70%);
+    bottom: 20%; left: 50%; transform: translateX(-50%);
     pointer-events: none;
   }
 
   .topbar-landing {
     position: absolute; top: 0; left: 0; right: 0;
-    padding: 18px 28px; display: flex; align-items: center; gap: 10px;
+    padding: 20px 28px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(50,100,200,0.08);
   }
 
-  .logo-mark { width: 30px; height: 30px; flex-shrink: 0; }
+  .logo-lockup { display: flex; align-items: center; gap: 10px; flex: 1; }
+
+  .logo-mark { width: 28px; height: 28px; flex-shrink: 0; }
 
   .logo-name {
-    font-size: 15px; font-weight: 500; letter-spacing: 0.08em;
-    color: rgba(180, 220, 255, 0.9); text-transform: uppercase;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.14em;
+    color: rgba(180, 215, 255, 0.85); text-transform: uppercase;
   }
 
-  .center-logo {
-    display: flex; flex-direction: column; align-items: center; gap: 14px;
-    margin-bottom: 80px; position: relative; z-index: 1;
+  .logo-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: rgba(80,160,255,0.45);
+    letter-spacing: 0.1em; padding: 2px 6px;
+    border: 1px solid rgba(80,160,255,0.15);
+    border-radius: 3px; margin-left: 4px;
   }
 
-  .center-logo .big-logo {
-    width: 90px; height: 90px;
-    filter: drop-shadow(0 0 18px rgba(90,190,255,0.45));
+  .theme-btn {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 1px solid rgba(80,150,255,0.15);
+    background: rgba(10,25,55,0.5);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .theme-btn:hover { background: rgba(30,70,160,0.3); }
+  .theme-btn svg { width: 14px; height: 14px; }
+
+  /* hero */
+  .hero {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 18px; margin-bottom: 72px; position: relative; z-index: 1;
+    text-align: center;
+  }
+
+  .big-logo {
+    width: 80px; height: 80px;
+    filter: drop-shadow(0 0 24px rgba(60,140,255,0.5));
     animation: breathe 4s ease-in-out infinite;
   }
 
   @keyframes breathe {
-    0%, 100% { filter: drop-shadow(0 0 14px rgba(90,190,255,0.35)); }
-    50%       { filter: drop-shadow(0 0 28px rgba(90,190,255,0.65)); }
+    0%,100% { filter: drop-shadow(0 0 16px rgba(60,140,255,0.35)); }
+    50%      { filter: drop-shadow(0 0 32px rgba(60,140,255,0.65)); }
   }
 
-  .tagline {
-    font-size: 12px; font-weight: 300; letter-spacing: 0.24em;
-    color: rgba(160, 210, 255, 0.65); text-transform: uppercase;
+  .hero-title {
+    font-size: 11px; font-weight: 400; letter-spacing: 0.3em;
+    color: rgba(120,180,255,0.5); text-transform: uppercase;
   }
 
+  /* landing input */
   .landing-input-wrap {
-    position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
-    width: min(520px, 90%); z-index: 2;
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    width: min(560px, 90%); z-index: 2;
+  }
+
+  .landing-hint {
+    text-align: center; margin-bottom: 12px;
+    font-size: 11px; color: rgba(100,160,230,0.35); letter-spacing: 0.06em;
   }
 
   .landing-input-row {
     display: flex; align-items: center;
-    background: rgba(10, 28, 60, 0.6);
-    border: 1px solid rgba(100, 170, 255, 0.25);
-    border-radius: 40px; padding: 10px 10px 10px 22px;
-    backdrop-filter: blur(12px); transition: border-color 0.2s;
+    background: rgba(8, 22, 52, 0.8);
+    border: 1px solid rgba(80,140,255,0.2);
+    border-radius: 12px;
+    padding: 12px 12px 12px 20px;
+    backdrop-filter: blur(16px);
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
-  .landing-input-row:focus-within { border-color: rgba(100, 170, 255, 0.55); }
+  .landing-input-row:focus-within {
+    border-color: rgba(80,150,255,0.45);
+    box-shadow: 0 0 0 3px rgba(60,120,255,0.08);
+  }
+
   .landing-input-row input {
     flex: 1; background: transparent; border: none; outline: none;
-    color: rgba(200, 230, 255, 0.9); font-size: 14px; font-family: 'Inter', sans-serif;
-    font-weight: 300; caret-color: rgba(100,190,255,0.8);
+    color: rgba(200,225,255,0.9); font-size: 14px; font-family: 'Inter', sans-serif;
+    font-weight: 300; caret-color: #5a9fff;
   }
-  .landing-input-row input::placeholder { color: rgba(130, 180, 230, 0.4); }
+  .landing-input-row input::placeholder { color: rgba(100,150,220,0.35); }
 
   .send-btn {
-    width: 34px; height: 34px; border-radius: 50%;
-    background: rgba(50, 130, 220, 0.75); border: none; cursor: pointer;
+    width: 36px; height: 36px; border-radius: 8px;
+    background: rgba(50,110,230,0.8);
+    border: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: background 0.2s, transform 0.1s; flex-shrink: 0;
   }
-  .send-btn:hover  { background: rgba(70, 155, 240, 0.9); }
+  .send-btn:hover  { background: rgba(60,130,250,0.95); }
   .send-btn:active { transform: scale(0.95); }
   .send-btn svg    { width: 15px; height: 15px; }
 
-  /* ─── INNER ─── */
+  /* example chips */
+  .example-chips {
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+    margin-top: 12px;
+  }
+
+  .chip {
+    font-size: 11px; color: rgba(100,170,255,0.5);
+    border: 1px solid rgba(80,140,255,0.12);
+    border-radius: 20px; padding: 4px 12px;
+    cursor: pointer; transition: all 0.15s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .chip:hover {
+    background: rgba(50,100,200,0.15);
+    color: rgba(140,200,255,0.8);
+    border-color: rgba(80,150,255,0.3);
+  }
+
+  /* ══════════════════════════════════════
+     INNER — Canvas-first layout
+  ══════════════════════════════════════ */
   #inner {
     height: 100%;
-    background: linear-gradient(160deg, #081424 0%, #0b1e3d 25%, #0d2c59 50%, #103565 70%, #174d8a 100%);
+    background: #07111f;
     display: none;
-    grid-template-rows: 48px 1fr 68px;
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: 200px 1fr 280px;
+    grid-template-rows: 44px 1fr 60px;
   }
   #inner.active { display: grid; }
 
+  /* ── Topbar ── */
   .topbar-inner {
     grid-column: 1 / -1;
-    display: flex; align-items: center; gap: 10px; padding: 0 20px;
-    border-bottom: 1px solid rgba(80, 140, 220, 0.12);
-    background: rgba(5, 15, 35, 0.5);
+    display: flex; align-items: center; gap: 10px; padding: 0 18px;
+    background: rgba(5,12,30,0.9);
+    border-bottom: 1px solid rgba(50,100,200,0.1);
   }
 
-  .inner-logo-sm { width: 22px; height: 22px; flex-shrink: 0; }
+  .inner-logo-sm { width: 20px; height: 20px; flex-shrink: 0; }
 
   .inner-name {
-    font-size: 13px; font-weight: 500; letter-spacing: 0.1em;
-    color: rgba(150,200,255,0.75); text-transform: uppercase;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.12em;
+    color: rgba(140,195,255,0.7); text-transform: uppercase;
+  }
+
+  .topbar-divider {
+    width: 1px; height: 16px; background: rgba(80,140,220,0.15); margin: 0 4px;
   }
 
   .topbar-inner .spacer { flex: 1; }
 
-  .theme-toggle-btn {
-    width: 32px; height: 32px; border-radius: 50%;
-    border: 1px solid rgba(80,150,255,0.2);
-    background: rgba(10,28,60,0.4);
-    cursor: pointer; margin-right: 12px;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s, border-color 0.2s; flex-shrink: 0;
+  .status-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 20px;
+    background: rgba(10,30,70,0.6);
+    border: 1px solid rgba(60,130,220,0.15);
   }
-  .theme-toggle-btn:hover { background: rgba(40,90,180,0.3); }
-  .theme-toggle-btn svg   { width: 16px; height: 16px; }
 
   .status-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: #3ddfaf; box-shadow: 0 0 6px rgba(61,223,175,0.6);
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #3ddfaf;
+    box-shadow: 0 0 5px rgba(61,223,175,0.6);
+    transition: background 0.3s;
   }
 
-  .status-label { font-size: 11px; color: rgba(100,180,240,0.5); letter-spacing: 0.06em; }
-
-  .sidebar {
-    background: rgba(6, 18, 42, 0.55);
-    border-right: 1px solid rgba(80, 140, 220, 0.1);
-    padding: 16px 12px;
-    display: flex; flex-direction: column; gap: 6px;
-    overflow-y: auto;
+  .status-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: rgba(100,175,240,0.55);
+    letter-spacing: 0.06em;
   }
 
-  .sidebar-section-label {
-    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: rgba(100,160,220,0.4); padding: 8px 8px 4px;
+  /* ── Left panel: history ── */
+  .left-panel {
+    background: rgba(5,12,30,0.7);
+    border-right: 1px solid rgba(50,100,200,0.08);
+    display: flex; flex-direction: column;
+    overflow: hidden;
   }
 
-  .sidebar-item {
-    padding: 8px 10px; border-radius: 8px;
-    font-size: 12px; color: rgba(160, 210, 255, 0.6);
-    cursor: pointer; transition: background 0.15s, color 0.15s;
-    display: flex; align-items: center; gap: 8px;
+  .panel-header {
+    padding: 12px 14px 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(80,140,220,0.4);
+    border-bottom: 1px solid rgba(50,100,200,0.06);
+  }
+
+  .history-list {
+    flex: 1; overflow-y: auto; padding: 8px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+
+  .history-item {
+    padding: 8px 10px; border-radius: 6px;
+    font-size: 11px; color: rgba(140,190,255,0.55);
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: flex-start; gap: 8px;
     border: 1px solid transparent;
+    line-height: 1.4;
   }
-  .sidebar-item:hover { background: rgba(60,120,210,0.15); color: rgba(190,225,255,0.85); }
-  .sidebar-item.active {
-    background: rgba(40, 100, 200, 0.2);
-    border-color: rgba(80,150,240,0.2);
-    color: rgba(190,230,255,0.9);
+  .history-item:hover {
+    background: rgba(40,90,200,0.1);
+    color: rgba(180,215,255,0.8);
   }
-
-  .sidebar-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(100,180,255,0.4); flex-shrink: 0; }
-
-  .canvas-area {
-    padding: 24px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto;
+  .history-item.active {
+    background: rgba(30,75,180,0.18);
+    border-color: rgba(70,140,240,0.18);
+    color: rgba(180,220,255,0.9);
   }
 
-  .canvas-msg { display: flex; gap: 12px; align-items: flex-start; }
-
-  .avatar-ring {
-    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
-    border: 1px solid rgba(80,160,255,0.3);
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(20,60,140,0.5);
-  }
-  .avatar-ring svg { width: 14px; height: 14px; }
-
-  .user-bubble {
-    background: rgba(30,80,180,0.25);
-    border: 1px solid rgba(80,150,255,0.18);
-    border-radius: 16px 16px 4px 16px;
-    padding: 9px 14px; font-size: 13px; color: rgba(200,230,255,0.85);
-    max-width: 360px; line-height: 1.5;
+  .history-dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: rgba(80,170,255,0.4); flex-shrink: 0; margin-top: 5px;
   }
 
-  .canvas-reply {
-    margin-left: 42px;
-    background: rgba(10, 30, 70, 0.5);
-    border: 1px solid rgba(80, 150, 240, 0.2);
-    border-radius: 4px 16px 16px 16px;
-    overflow: hidden; max-width: 420px;
+  .empty-history {
+    padding: 20px 14px;
+    font-size: 11px; color: rgba(80,130,200,0.3);
+    text-align: center; line-height: 1.6;
+    font-family: 'JetBrains Mono', monospace;
   }
 
-  .canvas-label {
-    padding: 8px 14px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
-    color: rgba(100,180,255,0.5);
-    border-bottom: 1px solid rgba(80,150,240,0.1);
-    display: flex; align-items: center; gap: 6px;
+  /* ── Center: CANVAS (main focus) ── */
+  .canvas-panel {
+    display: flex; flex-direction: column;
+    background: #07111f;
+    overflow: hidden; position: relative;
   }
 
-  .canvas-label .pulse {
-    width: 5px; height: 5px; border-radius: 50%; background: #56c8ff;
-    animation: pulse 2s ease-in-out infinite;
+  .canvas-toolbar {
+    padding: 8px 16px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(50,100,200,0.08);
+    background: rgba(5,12,28,0.6);
   }
 
-  @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+  .canvas-toolbar-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(80,140,220,0.4);
+  }
 
-  .canvas-preview {
-    width: 100%; height: 180px;
-    background: linear-gradient(135deg, rgba(8,20,50,0.95) 0%, rgba(15,40,90,0.9) 100%);
-    display: flex; align-items: center; justify-content: center;
+  .canvas-size-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: rgba(60,120,200,0.35);
+    padding: 2px 6px; border: 1px solid rgba(60,120,200,0.1);
+    border-radius: 3px;
+  }
+
+  .toolbar-spacer { flex: 1; }
+
+  .zoom-btn {
+    font-size: 10px; color: rgba(100,160,240,0.4);
+    background: none; border: none; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 3px 6px; border-radius: 4px; transition: all 0.15s;
+  }
+  .zoom-btn:hover { background: rgba(40,90,200,0.15); color: rgba(140,200,255,0.7); }
+
+  /* The actual canvas display area */
+  .canvas-display {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 24px; overflow: hidden; position: relative;
+  }
+
+  .canvas-frame {
+    width: 100%; max-width: 800px;
+    aspect-ratio: 800/480;
+    background: #ffffff;
+    border-radius: 4px;
+    box-shadow:
+      0 0 0 1px rgba(50,100,200,0.15),
+      0 8px 40px rgba(0,0,10,0.5),
+      0 0 80px rgba(30,70,200,0.05);
     position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    cursor: zoom-in;
+    transition: box-shadow 0.3s;
+  }
+  .canvas-frame:hover {
+    box-shadow:
+      0 0 0 1px rgba(80,150,255,0.3),
+      0 8px 40px rgba(0,0,10,0.5),
+      0 0 80px rgba(40,90,220,0.1);
   }
 
-  .canvas-text-reply {
-    padding: 10px 14px; font-size: 12px; color: rgba(160,210,255,0.7);
-    line-height: 1.6; border-top: 1px solid rgba(80,150,240,0.1);
+  .canvas-frame img {
+    width: 100%; height: 100%; object-fit: contain;
+    filter: brightness(0.96);
   }
 
-  .inner-input-bar {
+  .canvas-empty {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    color: rgba(60,110,180,0.35);
+  }
+
+  .canvas-empty-icon {
+    width: 48px; height: 48px; opacity: 0.2;
+  }
+
+  .canvas-empty-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.1em;
+    color: rgba(80,140,210,0.3);
+    text-align: center; line-height: 1.8;
+  }
+
+  /* generating overlay */
+  .canvas-generating {
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.92);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px;
+  }
+  .canvas-generating.active { display: flex; }
+
+  .gen-spinner {
+    width: 32px; height: 32px;
+    border: 2px solid rgba(60,120,240,0.15);
+    border-top-color: rgba(60,120,240,0.7);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .gen-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: rgba(40,90,200,0.6);
+    letter-spacing: 0.1em;
+  }
+
+  .gen-step {
+    font-size: 10px; color: rgba(80,140,220,0.4);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* canvas meta bar */
+  .canvas-meta {
+    padding: 6px 16px;
+    border-top: 1px solid rgba(50,100,200,0.06);
+    background: rgba(5,12,28,0.5);
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .meta-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: rgba(80,140,210,0.35);
+    letter-spacing: 0.06em; flex: 1;
+  }
+
+  .meta-action {
+    font-size: 9px; font-family: 'JetBrains Mono', monospace;
+    color: rgba(80,150,255,0.4); cursor: pointer;
+    background: none; border: none;
+    transition: color 0.15s;
+    letter-spacing: 0.06em;
+  }
+  .meta-action:hover { color: rgba(120,190,255,0.7); }
+
+  /* ── Right panel: log + tools ── */
+  .right-panel {
+    background: rgba(5,12,30,0.7);
+    border-left: 1px solid rgba(50,100,200,0.08);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+
+  .log-area {
+    flex: 1; overflow-y: auto; padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+
+  .log-entry {
+    display: flex; gap: 8px; align-items: flex-start;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; line-height: 1.5;
+    padding: 4px 6px; border-radius: 4px;
+  }
+
+  .log-entry.system { color: rgba(80,140,220,0.45); }
+  .log-entry.tool   { color: rgba(61,220,175,0.6); background: rgba(61,220,175,0.04); }
+  .log-entry.check  { color: rgba(255,180,60,0.6); background: rgba(255,180,60,0.04); }
+  .log-entry.done   { color: rgba(100,200,255,0.6); background: rgba(100,200,255,0.04); }
+  .log-entry.error  { color: rgba(255,90,90,0.7); background: rgba(255,90,90,0.04); }
+
+  .log-icon { flex-shrink: 0; opacity: 0.7; }
+
+  .log-empty {
+    padding: 20px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: rgba(60,110,180,0.25);
+    text-align: center; line-height: 1.8;
+  }
+
+  .tools-section {
+    border-top: 1px solid rgba(50,100,200,0.08);
+    padding: 10px 12px;
+  }
+
+  .tools-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(80,140,220,0.3); margin-bottom: 8px;
+  }
+
+  .tools-grid {
+    display: flex; flex-wrap: wrap; gap: 4px;
+  }
+
+  .tool-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: rgba(61,220,175,0.45);
+    padding: 2px 7px; border-radius: 3px;
+    border: 1px solid rgba(61,220,175,0.12);
+    letter-spacing: 0.04em;
+  }
+  .tool-tag.active-tool {
+    color: rgba(61,220,175,0.85);
+    border-color: rgba(61,220,175,0.35);
+    background: rgba(61,220,175,0.08);
+  }
+
+  /* ── Bottom input bar ── */
+  .input-bar {
     grid-column: 1 / -1;
-    border-top: 1px solid rgba(80, 140, 220, 0.1);
-    background: rgba(5, 15, 36, 0.6);
-    display: flex; align-items: center; padding: 0 16px;
+    border-top: 1px solid rgba(50,100,200,0.08);
+    background: rgba(5,12,28,0.9);
+    display: flex; align-items: center; gap: 10px; padding: 0 16px;
   }
 
-  .inner-input-row {
+  .input-row {
     flex: 1; display: flex; align-items: center;
-    background: rgba(12, 32, 72, 0.7);
-    border: 1px solid rgba(80,150,255,0.15);
-    border-radius: 30px; padding: 8px 8px 8px 18px;
-    margin: 10px 0; transition: border-color 0.2s;
+    background: rgba(10,25,60,0.8);
+    border: 1px solid rgba(60,120,220,0.12);
+    border-radius: 8px; padding: 8px 8px 8px 16px;
+    margin: 10px 0;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
-  .inner-input-row:focus-within { border-color: rgba(80,150,255,0.4); }
-  .inner-input-row input {
-    flex: 1; background: transparent; border: none; outline: none;
-    color: rgba(200,230,255,0.85); font-size: 13px; font-family: 'Inter', sans-serif;
-    font-weight: 300; caret-color: rgba(100,190,255,0.8);
+  .input-row:focus-within {
+    border-color: rgba(60,130,240,0.35);
+    box-shadow: 0 0 0 2px rgba(50,110,230,0.07);
   }
-  .inner-input-row input::placeholder { color: rgba(100,160,220,0.35); }
 
-  .send-btn-inner {
-    width: 30px; height: 30px; border-radius: 50%;
-    background: rgba(40,110,210,0.65); border: none; cursor: pointer;
+  .input-row input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: rgba(200,225,255,0.85); font-size: 13px; font-family: 'Inter', sans-serif;
+    font-weight: 300; caret-color: #5a9fff;
+  }
+  .input-row input::placeholder { color: rgba(80,130,210,0.3); }
+
+  .input-send {
+    width: 30px; height: 30px; border-radius: 6px;
+    background: rgba(40,100,220,0.7);
+    border: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: background 0.2s; flex-shrink: 0;
   }
-  .send-btn-inner:hover { background: rgba(60,140,240,0.85); }
-  .send-btn-inner svg   { width: 13px; height: 13px; }
+  .input-send:hover { background: rgba(55,125,245,0.9); }
+  .input-send svg   { width: 13px; height: 13px; }
+
+  /* ── Fullscreen overlay ── */
+  .img-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(3,8,20,0.92);
+    z-index: 1000; align-items: center; justify-content: center;
+    cursor: zoom-out;
+    backdrop-filter: blur(8px);
+  }
+  .img-overlay.active { display: flex; }
+  .img-overlay img {
+    max-width: 92vw; max-height: 92vh;
+    object-fit: contain; border-radius: 4px;
+    box-shadow: 0 0 60px rgba(40,90,220,0.25);
+  }
+
+  .overlay-close {
+    position: absolute; top: 20px; right: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: rgba(120,180,255,0.4);
+    cursor: pointer; letter-spacing: 0.1em;
+    transition: color 0.15s;
+  }
+  .overlay-close:hover { color: rgba(160,210,255,0.7); }
 
   /* ── LIGHT THEME ── */
-  body.light { background: #c8dcf5; color: #0d2147; }
-  body.light #landing { background: linear-gradient(170deg, #c2d8f5 0%, #aac8f0 25%, #8eb4e8 50%, #6a9cdc 75%, #4a82cc 100%); }
-  body.light #landing::before { display: none; }
-  body.light .logo-name { color: rgba(10, 40, 110, 0.9); }
-  body.light .tagline { color: rgba(10, 40, 110, 0.75); }
-  body.light .landing-input-row { background: rgba(255,255,255,0.55); border-color: rgba(60,120,220,0.3); backdrop-filter: blur(16px); }
-  body.light .landing-input-row:focus-within { border-color: rgba(40,100,210,0.6); }
-  body.light .landing-input-row input { color: rgba(10,35,110,0.9); }
-  body.light .landing-input-row input::placeholder { color: rgba(40,90,180,0.4); }
-  body.light .send-btn { background: rgba(30,90,210,0.8); }
-  body.light .send-btn:hover { background: rgba(20,75,195,0.95); }
-  body.light #inner { background: linear-gradient(160deg, #dce8f7 0%, #c8daf2 25%, #b8cfe8 50%, #a8c4e0 70%, #90b0d4 100%); }
-  body.light .topbar-inner { background: rgba(220,235,255,0.8); border-bottom-color: rgba(80,130,210,0.2); }
-  body.light .inner-name { color: rgba(15,45,110,0.85); }
-  body.light .status-label { color: rgba(20,60,150,0.65); }
-  body.light .sidebar { background: rgba(195,218,250,0.55); border-right-color: rgba(80,130,210,0.15); }
-  body.light .sidebar-section-label { color: rgba(30,70,160,0.55); }
-  body.light .sidebar-item { color: rgba(15,45,120,0.75); }
-  body.light .sidebar-item:hover { background: rgba(80,140,220,0.15); color: rgba(10,35,100,0.9); }
-  body.light .sidebar-item.active { background: rgba(60,110,210,0.18); border-color: rgba(60,120,220,0.28); color: rgba(10,30,100,0.95); }
-  body.light .user-bubble { background: rgba(190,215,255,0.45); border-color: rgba(80,140,220,0.28); color: rgba(10,35,100,0.9); }
-  body.light .avatar-ring { background: rgba(160,200,255,0.45); border-color: rgba(80,140,220,0.3); }
-  body.light .canvas-reply { background: rgba(210,228,255,0.6); border-color: rgba(80,140,220,0.28); }
-  body.light .canvas-label { color: rgba(20,60,160,0.65); border-bottom-color: rgba(80,140,220,0.15); }
-  body.light .canvas-preview { background: linear-gradient(135deg, rgba(180,210,250,0.9) 0%, rgba(150,190,240,0.95) 100%); }
-  body.light .canvas-text-reply { color: rgba(15,50,130,0.8); border-top-color: rgba(80,140,220,0.15); }
-  body.light .inner-input-bar { background: rgba(200,222,252,0.7); border-top-color: rgba(80,130,210,0.18); }
-  body.light .inner-input-row { background: rgba(235,243,255,0.85); border-color: rgba(80,140,220,0.22); }
-  body.light .inner-input-row:focus-within { border-color: rgba(40,100,210,0.45); }
-  body.light .inner-input-row input { color: rgba(10,35,100,0.9); }
-  body.light .inner-input-row input::placeholder { color: rgba(60,110,180,0.45); }
-  body.light .send-btn-inner { background: rgba(35,100,210,0.65); }
-  body.light .send-btn-inner:hover { background: rgba(25,85,195,0.82); }
-  body.light .theme-toggle-btn { border-color: rgba(40,90,180,0.28); background: rgba(190,215,255,0.4); }
-  body.light .theme-toggle-btn:hover { background: rgba(170,200,255,0.55); }
-  body.light .topbar-landing .logo-name { color: rgba(10,35,110,0.95); }
-  body.light .topbar-landing .theme-toggle-btn { border-color: rgba(20,70,180,0.35); background: rgba(255,255,255,0.35); }
+  body.light { background: #e8f0fb; color: #0d2147; }
+  body.light #landing { background: radial-gradient(ellipse 80% 60% at 50% 70%, #b8d0f0 0%, #e8f0fb 70%); }
+  body.light #landing::before { background-image: linear-gradient(rgba(30,80,200,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(30,80,200,0.05) 1px, transparent 1px); }
+  body.light .topbar-landing { border-bottom-color: rgba(30,80,200,0.08); }
+  body.light .logo-name { color: rgba(10,40,120,0.9); }
+  body.light .logo-tag { color: rgba(30,80,200,0.4); border-color: rgba(30,80,200,0.15); }
+  body.light .hero-title { color: rgba(30,80,180,0.5); }
+  body.light .landing-input-row { background: rgba(255,255,255,0.8); border-color: rgba(60,120,220,0.25); }
+  body.light .landing-input-row input { color: rgba(10,35,100,0.9); }
+  body.light .landing-input-row input::placeholder { color: rgba(60,110,200,0.35); }
+  body.light .landing-hint { color: rgba(60,110,200,0.4); }
+  body.light .chip { color: rgba(40,90,200,0.55); border-color: rgba(40,90,200,0.15); }
+  body.light .chip:hover { background: rgba(40,90,200,0.08); color: rgba(20,60,180,0.8); border-color: rgba(40,90,200,0.3); }
+  body.light #inner { background: #eef4fc; }
+  body.light .topbar-inner { background: rgba(230,240,255,0.95); border-bottom-color: rgba(60,120,220,0.1); }
+  body.light .inner-name { color: rgba(15,45,120,0.8); }
+  body.light .left-panel { background: rgba(220,235,255,0.6); border-right-color: rgba(60,120,220,0.1); }
+  body.light .panel-header { color: rgba(40,90,180,0.45); border-bottom-color: rgba(60,120,220,0.08); }
+  body.light .history-item { color: rgba(30,70,160,0.55); }
+  body.light .history-item:hover { background: rgba(60,120,220,0.1); color: rgba(15,50,140,0.8); }
+  body.light .history-item.active { background: rgba(50,110,220,0.15); border-color: rgba(60,130,230,0.2); color: rgba(10,40,120,0.9); }
+  body.light .empty-history { color: rgba(60,110,200,0.3); }
+  body.light .canvas-panel { background: #eef4fc; }
+  body.light .canvas-toolbar { background: rgba(220,235,255,0.7); border-bottom-color: rgba(60,120,220,0.1); }
+  body.light .canvas-toolbar-label { color: rgba(40,90,180,0.45); }
+  body.light .canvas-size-tag { color: rgba(40,90,180,0.4); border-color: rgba(40,90,180,0.12); }
+  body.light .canvas-frame { box-shadow: 0 0 0 1px rgba(60,120,220,0.15), 0 8px 30px rgba(0,0,80,0.1); }
+  body.light .canvas-empty-text { color: rgba(60,110,200,0.35); }
+  body.light .canvas-meta { background: rgba(215,232,255,0.6); border-top-color: rgba(60,120,220,0.08); }
+  body.light .meta-text { color: rgba(50,100,200,0.4); }
+  body.light .right-panel { background: rgba(220,235,255,0.6); border-left-color: rgba(60,120,220,0.1); }
+  body.light .log-entry.system { color: rgba(40,90,200,0.5); }
+  body.light .log-entry.tool { color: rgba(0,140,100,0.7); background: rgba(0,140,100,0.05); }
+  body.light .log-entry.check { color: rgba(180,100,0,0.65); background: rgba(180,100,0,0.05); }
+  body.light .log-entry.done { color: rgba(20,80,200,0.65); background: rgba(20,80,200,0.05); }
+  body.light .log-empty { color: rgba(50,100,190,0.3); }
+  body.light .tools-label { color: rgba(40,90,180,0.35); }
+  body.light .tool-tag { color: rgba(0,130,90,0.5); border-color: rgba(0,130,90,0.15); }
+  body.light .tool-tag.active-tool { color: rgba(0,130,90,0.85); border-color: rgba(0,130,90,0.35); background: rgba(0,130,90,0.08); }
+  body.light .input-bar { background: rgba(215,230,255,0.95); border-top-color: rgba(60,120,220,0.1); }
+  body.light .input-row { background: rgba(240,246,255,0.9); border-color: rgba(60,120,220,0.15); }
+  body.light .input-row input { color: rgba(10,35,100,0.9); }
+  body.light .input-row input::placeholder { color: rgba(60,110,200,0.35); }
+  body.light .status-pill { background: rgba(210,230,255,0.7); border-color: rgba(60,120,220,0.15); }
+  body.light .status-label { color: rgba(40,90,180,0.6); }
+  body.light .theme-btn { background: rgba(210,228,255,0.6); border-color: rgba(60,120,220,0.2); }
 
-  /* SVG logo classes */
-  .lsvg-core { fill: rgba(140,210,255,0.9); }
-  .lsvg-arc1 { stroke: rgba(90,175,255,0.6); }
-  .lsvg-arc2 { stroke: rgba(90,175,255,0.35); }
-  .lsvg-node { fill: rgba(150,220,255,0.5); }
-  body.light .lsvg-core { fill: #1a4a9a; }
-  body.light .lsvg-arc1 { stroke: #2a5ab0; }
-  body.light .lsvg-arc2 { stroke: #3a6ac0; }
-  body.light .lsvg-node { fill: #2550a0; }
+  /* SVG logo */
+  .lsvg-core { fill: rgba(130,205,255,0.9); }
+  .lsvg-arc1 { stroke: rgba(80,170,255,0.55); }
+  .lsvg-arc2 { stroke: rgba(80,170,255,0.3); }
+  .lsvg-node { fill: rgba(140,215,255,0.5); }
+  body.light .lsvg-core { fill: #1a4aaa; }
+  body.light .lsvg-arc1 { stroke: #2a5ac0; }
+  body.light .lsvg-arc2 { stroke: #3a6ad0; }
+  body.light .lsvg-node { fill: #2555b0; }
 
-  .bsvg-outer { fill: rgba(140,215,255,0.92); }
-  .bsvg-inner { fill: rgba(60,155,255,0.9); }
-  .bsvg-orbit { stroke: rgba(90,175,255,0.45); }
-  .bsvg-o2    { stroke: rgba(90,175,255,0.3); }
-  .bsvg-o3    { stroke: rgba(90,175,255,0.25); }
-  .bsvg-node  { fill: rgba(140,215,255,0.6); }
-  .bsvg-node2 { fill: rgba(140,215,255,0.45); }
-  .bsvg-ring  { stroke: rgba(80,155,240,0.12); }
+  .bsvg-outer { fill: rgba(130,210,255,0.92); }
+  .bsvg-inner { fill: rgba(50,145,255,0.9); }
+  .bsvg-o1    { stroke: rgba(80,170,255,0.4); }
+  .bsvg-o2    { stroke: rgba(80,170,255,0.25); }
+  .bsvg-o3    { stroke: rgba(80,170,255,0.2); }
+  .bsvg-node  { fill: rgba(130,210,255,0.6); }
+  .bsvg-node2 { fill: rgba(130,210,255,0.4); }
+  .bsvg-ring  { stroke: rgba(70,145,235,0.1); }
   body.light .bsvg-outer { fill: #1a5ab8; }
   body.light .bsvg-inner { fill: #0f3a8a; }
-  body.light .bsvg-orbit { stroke: rgba(15,60,150,0.5); }
-  body.light .bsvg-o2    { stroke: rgba(15,60,150,0.35); }
-  body.light .bsvg-o3    { stroke: rgba(15,60,150,0.28); }
-  body.light .bsvg-node  { fill: #1a4a9e; }
-  body.light .bsvg-node2 { fill: #2255a8; }
-  body.light .bsvg-ring  { stroke: rgba(15,50,130,0.2); }
+  body.light .bsvg-o1    { stroke: rgba(15,60,150,0.45); }
+  body.light .bsvg-o2    { stroke: rgba(15,60,150,0.3); }
+  body.light .bsvg-o3    { stroke: rgba(15,60,150,0.22); }
+  body.light .bsvg-node  { fill: #1a4aae; }
+  body.light .bsvg-node2 { fill: #2255b0; }
+  body.light .bsvg-ring  { stroke: rgba(15,50,130,0.15); }
 
-  body.light .center-logo .big-logo {
-    filter: drop-shadow(0 0 14px rgba(20,80,200,0.25));
-    animation: breathe-light 4s ease-in-out infinite;
-  }
-  @keyframes breathe-light {
-    0%, 100% { filter: drop-shadow(0 0 10px rgba(20,80,200,0.2)); }
-    50%       { filter: drop-shadow(0 0 22px rgba(20,80,200,0.45)); }
-  }
-
-/* Fullscreen overlay */
-.img-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.85);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-  cursor: zoom-out;
-}
-.img-overlay.active { display: flex; }
-.img-overlay img {
-  max-width: 90vw;
-  max-height: 90vh;
-  object-fit: contain;
-  border-radius: 8px;
-  box-shadow: 0 0 40px rgba(80,150,255,0.3);
-}
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(80,140,220,0.15); border-radius: 2px; }
 </style>
 </head>
 <body>
 
-<div class="scene-wrapper" role="main">
-
-  <!-- LANDING -->
-  <div id="landing" class="layer active">
-    <div class="topbar-landing">
+<!-- LANDING -->
+<div id="landing" class="layer active">
+  <div class="topbar-landing">
+    <div class="logo-lockup">
       <svg class="logo-mark" viewBox="0 0 30 30" fill="none">
         <circle cx="15" cy="15" r="3.2" class="lsvg-core"/>
         <path d="M15 4 Q22 9 22 15 Q22 21 15 26 Q8 21 8 15 Q8 9 15 4Z" class="lsvg-arc1" stroke-width="1" fill="none"/>
@@ -387,194 +638,350 @@
         <circle cx="6.5" cy="19.5" r="1" class="lsvg-node"/>
       </svg>
       <span class="logo-name">Lumea</span>
-      <div style="flex:1"></div>
-      <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle theme">
-        <svg id="icon-moon-landing" viewBox="0 0 20 20" fill="none">
-          <path d="M17 12.5A7 7 0 0 1 7.5 3a7.002 7.002 0 0 0 0 14A7 7 0 0 0 17 12.5Z" fill="rgba(160,210,255,0.85)" stroke="rgba(130,190,255,0.5)" stroke-width="0.8"/>
-        </svg>
-        <svg id="icon-sun-landing" viewBox="0 0 20 20" fill="none" style="display:none">
-          <circle cx="10" cy="10" r="4" fill="#1a4a8a"/>
-          <g stroke="#1a4a8a" stroke-width="1.4" stroke-linecap="round">
-            <line x1="10" y1="2" x2="10" y2="4"/><line x1="10" y1="16" x2="10" y2="18"/>
-            <line x1="2" y1="10" x2="4" y2="10"/><line x1="16" y1="10" x2="18" y2="10"/>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="14.36" y1="14.36" x2="15.78" y2="15.78"/>
-            <line x1="4.22" y1="15.78" x2="5.64" y2="14.36"/><line x1="14.36" y1="5.64" x2="15.78" y2="4.22"/>
-          </g>
+      <span class="logo-tag">MCP v1.0</span>
+    </div>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg id="icon-moon-l" viewBox="0 0 20 20" fill="none">
+        <path d="M17 12.5A7 7 0 0 1 7.5 3a7.002 7.002 0 0 0 0 14A7 7 0 0 0 17 12.5Z" fill="rgba(160,210,255,0.85)" stroke="rgba(130,190,255,0.5)" stroke-width="0.8"/>
+      </svg>
+      <svg id="icon-sun-l" viewBox="0 0 20 20" fill="none" style="display:none">
+        <circle cx="10" cy="10" r="4" fill="#1a4a8a"/>
+        <g stroke="#1a4a8a" stroke-width="1.4" stroke-linecap="round">
+          <line x1="10" y1="2" x2="10" y2="4"/><line x1="10" y1="16" x2="10" y2="18"/>
+          <line x1="2" y1="10" x2="4" y2="10"/><line x1="16" y1="10" x2="18" y2="10"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="14.36" y1="14.36" x2="15.78" y2="15.78"/>
+          <line x1="4.22" y1="15.78" x2="5.64" y2="14.36"/><line x1="14.36" y1="5.64" x2="15.78" y2="4.22"/>
+        </g>
+      </svg>
+    </button>
+  </div>
+
+  <div class="hero">
+    <svg class="big-logo" viewBox="0 0 90 90" fill="none">
+      <circle cx="45" cy="45" r="10" class="bsvg-outer"/>
+      <circle cx="45" cy="45" r="6" class="bsvg-inner"/>
+      <ellipse cx="45" cy="45" rx="28" ry="12" class="bsvg-o1" stroke-width="1.2" fill="none" transform="rotate(-30 45 45)"/>
+      <ellipse cx="45" cy="45" rx="28" ry="12" class="bsvg-o2" stroke-width="0.9" fill="none" transform="rotate(30 45 45)"/>
+      <ellipse cx="45" cy="45" rx="12" ry="32" class="bsvg-o3" stroke-width="0.9" fill="none"/>
+      <circle cx="17" cy="45" r="2.5" class="bsvg-node"/>
+      <circle cx="73" cy="45" r="2.5" class="bsvg-node"/>
+      <circle cx="62" cy="21" r="2" class="bsvg-node2"/>
+      <circle cx="28" cy="69" r="2" class="bsvg-node2"/>
+      <circle cx="45" cy="45" r="40" class="bsvg-ring" stroke-width="0.8" fill="none" stroke-dasharray="4 6"/>
+    </svg>
+    <span class="hero-title">Agentic Drawing System · Plan → Act → Verify</span>
+  </div>
+
+  <div class="landing-input-wrap">
+    <p class="landing-hint">Describe what you want to draw in plain English</p>
+    <div class="landing-input-row">
+      <input type="text" id="landing-input" placeholder="draw a simple clock showing 3 o'clock…" autocomplete="off"/>
+      <button class="send-btn" onclick="goToInner()" aria-label="Draw">
+        <svg viewBox="0 0 15 15" fill="none">
+          <path d="M2 7.5H13M13 7.5L8.5 3M13 7.5L8.5 12" stroke="rgba(200,235,255,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
     </div>
+    <div class="example-chips">
+      <span class="chip" onclick="useChip(this)">circuit diagram</span>
+      <span class="chip" onclick="useChip(this)">floor plan</span>
+      <span class="chip" onclick="useChip(this)">solar system</span>
+      <span class="chip" onclick="useChip(this)">mandala</span>
+      <span class="chip" onclick="useChip(this)">bar chart</span>
+      <span class="chip" onclick="useChip(this)">DNA helix</span>
+    </div>
+  </div>
+</div>
 
-    <div class="center-logo">
-      <svg class="big-logo" viewBox="0 0 90 90" fill="none">
-        <circle cx="45" cy="45" r="10" class="bsvg-outer"/>
-        <circle cx="45" cy="45" r="6" class="bsvg-inner"/>
-        <ellipse cx="45" cy="45" rx="28" ry="12" class="bsvg-orbit" stroke-width="1.2" fill="none" transform="rotate(-30 45 45)"/>
-        <ellipse cx="45" cy="45" rx="28" ry="12" class="bsvg-orbit bsvg-o2" stroke-width="0.9" fill="none" transform="rotate(30 45 45)"/>
-        <ellipse cx="45" cy="45" rx="12" ry="32" class="bsvg-orbit bsvg-o3" stroke-width="0.9" fill="none"/>
-        <circle cx="17" cy="45" r="2.5" class="bsvg-node"/>
-        <circle cx="73" cy="45" r="2.5" class="bsvg-node"/>
-        <circle cx="62" cy="21" r="2" class="bsvg-node2"/>
-        <circle cx="28" cy="69" r="2" class="bsvg-node2"/>
-        <circle cx="45" cy="45" r="40" class="bsvg-ring" stroke-width="0.8" fill="none" stroke-dasharray="4 6"/>
+<!-- INNER -->
+<div id="inner" class="layer">
+
+  <!-- Topbar -->
+  <div class="topbar-inner">
+    <svg class="inner-logo-sm" viewBox="0 0 30 30" fill="none">
+      <circle cx="15" cy="15" r="3.2" fill="rgba(120,195,255,0.85)"/>
+      <path d="M15 4 Q22 9 22 15 Q22 21 15 26 Q8 21 8 15 Q8 9 15 4Z" stroke="rgba(90,175,255,0.5)" stroke-width="1" fill="none"/>
+      <path d="M4 15 Q9 8 15 8 Q21 8 26 15 Q21 22 15 22 Q9 22 4 15Z" stroke="rgba(90,175,255,0.3)" stroke-width="0.8" fill="none"/>
+    </svg>
+    <span class="inner-name">Lumea</span>
+    <div class="topbar-divider"></div>
+    <span id="topbar-prompt" style="font-size:11px;color:rgba(120,180,255,0.45);font-family:'JetBrains Mono',monospace;letter-spacing:0.04em;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    <div class="spacer"></div>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme" style="margin-right:8px">
+      <svg id="icon-moon" viewBox="0 0 20 20" fill="none">
+        <path d="M17 12.5A7 7 0 0 1 7.5 3a7.002 7.002 0 0 0 0 14A7 7 0 0 0 17 12.5Z" fill="rgba(160,210,255,0.85)" stroke="rgba(130,190,255,0.5)" stroke-width="0.8"/>
       </svg>
-      <span class="tagline">Visual Vector Drawing Chatbot · MCP powered</span>
+      <svg id="icon-sun" viewBox="0 0 20 20" fill="none" style="display:none">
+        <circle cx="10" cy="10" r="4" fill="#1a4a8a"/>
+        <g stroke="#1a4a8a" stroke-width="1.4" stroke-linecap="round">
+          <line x1="10" y1="2" x2="10" y2="4"/><line x1="10" y1="16" x2="10" y2="18"/>
+          <line x1="2" y1="10" x2="4" y2="10"/><line x1="16" y1="10" x2="18" y2="10"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="14.36" y1="14.36" x2="15.78" y2="15.78"/>
+          <line x1="4.22" y1="15.78" x2="5.64" y2="14.36"/><line x1="14.36" y1="5.64" x2="15.78" y2="4.22"/>
+        </g>
+      </svg>
+    </button>
+    <div class="status-pill">
+      <div class="status-dot" id="status-dot"></div>
+      <span class="status-label" id="status-label">ready</span>
+    </div>
+  </div>
+
+  <!-- Left: history -->
+  <div class="left-panel">
+    <div class="panel-header">Drawings</div>
+    <div class="history-list" id="history-list">
+      <div class="empty-history">No drawings yet.<br/>Send a prompt to begin.</div>
+    </div>
+  </div>
+
+  <!-- Center: canvas -->
+  <div class="canvas-panel">
+    <div class="canvas-toolbar">
+      <span class="canvas-toolbar-label">Canvas</span>
+      <span class="canvas-size-tag">800 × 480</span>
+      <div class="toolbar-spacer"></div>
+      <button class="zoom-btn" onclick="openOverlay(currentCanvasUrl)" id="zoom-btn" style="display:none">⤢ fullscreen</button>
     </div>
 
-    <div class="landing-input-wrap">
-      <div class="landing-input-row">
-        <input type="text" id="landing-input" placeholder="Describe what vector image you want to visualize…" autocomplete="off"/>
-        <button class="send-btn" onclick="goToInner()" aria-label="Send">
-          <svg viewBox="0 0 15 15" fill="none">
-            <path d="M2 7.5H13M13 7.5L8.5 3M13 7.5L8.5 12" stroke="rgba(200,235,255,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <div class="canvas-display">
+      <div class="canvas-frame" id="canvas-frame" onclick="openOverlay(currentCanvasUrl)">
+        <div class="canvas-empty" id="canvas-empty">
+          <svg class="canvas-empty-icon" viewBox="0 0 48 48" fill="none">
+            <rect x="4" y="10" width="40" height="28" rx="3" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M14 28 L20 20 L26 25 L32 18 L38 26" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="16" cy="20" r="2" fill="currentColor"/>
           </svg>
-        </button>
+          <span class="canvas-empty-text">Canvas is empty<br/>Send a prompt below to draw</span>
+        </div>
+        <img id="canvas-img" src="" alt="canvas" style="display:none;width:100%;height:100%;object-fit:contain"/>
+        <div class="canvas-generating" id="canvas-generating">
+          <div class="gen-spinner"></div>
+          <span class="gen-text">Generating…</span>
+          <span class="gen-step" id="gen-step">Planning drawing</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-meta">
+      <span class="meta-text" id="canvas-meta-text">—</span>
+      <button class="meta-action" onclick="openOverlay(currentCanvasUrl)" id="meta-view-btn" style="display:none">view full ↗</button>
+    </div>
+  </div>
+
+  <!-- Right: log + tools -->
+  <div class="right-panel">
+    <div class="panel-header">Agent log</div>
+    <div class="log-area" id="log-area">
+      <div class="log-empty" id="log-empty">Waiting for input…<br/>Tool calls will appear here.</div>
+    </div>
+    <div class="tools-section">
+      <div class="tools-label">Available tools</div>
+      <div class="tools-grid">
+        <span class="tool-tag" id="t-line">line</span>
+        <span class="tool-tag" id="t-rect">rect</span>
+        <span class="tool-tag" id="t-circle">circle</span>
+        <span class="tool-tag" id="t-arc">arc</span>
+        <span class="tool-tag" id="t-ellipse">ellipse</span>
+        <span class="tool-tag" id="t-polygon">polygon</span>
+        <span class="tool-tag" id="t-bezier">bezier</span>
+        <span class="tool-tag" id="t-rounded">rounded</span>
+        <span class="tool-tag" id="t-text">text</span>
       </div>
     </div>
   </div>
 
-  <!-- INNER -->
-  <div id="inner" class="layer">
-    <div class="topbar-inner">
-      <svg class="inner-logo-sm" viewBox="0 0 30 30" fill="none">
-        <circle cx="15" cy="15" r="3.2" fill="rgba(120,195,255,0.85)"/>
-        <path d="M15 4 Q22 9 22 15 Q22 21 15 26 Q8 21 8 15 Q8 9 15 4Z" stroke="rgba(90,175,255,0.5)" stroke-width="1" fill="none"/>
-        <path d="M4 15 Q9 8 15 8 Q21 8 26 15 Q21 22 15 22 Q9 22 4 15Z" stroke="rgba(90,175,255,0.3)" stroke-width="0.8" fill="none"/>
-      </svg>
-      <span class="inner-name">Lumea</span>
-      <div class="spacer"></div>
-      <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle theme">
-        <svg id="icon-moon" viewBox="0 0 20 20" fill="none">
-          <path d="M17 12.5A7 7 0 0 1 7.5 3a7.002 7.002 0 0 0 0 14A7 7 0 0 0 17 12.5Z" fill="rgba(160,210,255,0.85)" stroke="rgba(130,190,255,0.5)" stroke-width="0.8"/>
-        </svg>
-        <svg id="icon-sun" viewBox="0 0 20 20" fill="none" style="display:none">
-          <circle cx="10" cy="10" r="4" fill="#1a4a8a"/>
-          <g stroke="#1a4a8a" stroke-width="1.4" stroke-linecap="round">
-            <line x1="10" y1="2" x2="10" y2="4"/><line x1="10" y1="16" x2="10" y2="18"/>
-            <line x1="2" y1="10" x2="4" y2="10"/><line x1="16" y1="10" x2="18" y2="10"/>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="14.36" y1="14.36" x2="15.78" y2="15.78"/>
-            <line x1="4.22" y1="15.78" x2="5.64" y2="14.36"/><line x1="14.36" y1="5.64" x2="15.78" y2="4.22"/>
-          </g>
+  <!-- Bottom input -->
+  <div class="input-bar">
+    <div class="input-row">
+      <input type="text" id="inner-input" placeholder="Describe a new drawing or refine…" autocomplete="off"/>
+      <button class="input-send" id="input-send-btn" aria-label="Draw">
+        <svg viewBox="0 0 13 13" fill="none">
+          <path d="M1.5 6.5H11.5M11.5 6.5L7.5 2.5M11.5 6.5L7.5 10.5" stroke="rgba(200,235,255,0.9)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
-      <div class="status-dot"></div>
-      <span class="status-label">Canvas active</span>
-    </div>
-
-    <div class="sidebar">
-      <span class="sidebar-section-label">Sessions</span>
-      <div class="sidebar-item active">
-        <div class="sidebar-dot" style="background:rgba(80,180,255,0.7)"></div>
-        <span id="sidebar-first-prompt">New session</span>
-      </div>
-      <span class="sidebar-section-label" style="margin-top:8px">Tools</span>
-      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawLine</span></div>
-      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawArc</span></div>
-      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawEllipse</span></div>
-      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawRectangle</span></div>
-      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawRoundedRectangle</span></div>
-      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawRegularPolygon</span></div>
-      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawBezierCurve</span></div>
-      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawCircle</span></div>
-      <div class="sidebar-item"><div class="sidebar-dot" style="background:rgba(61,223,175,0.5)"></div><span>drawText</span></div>
-    </div>
-
-    <div class="canvas-area" id="canvas-area"></div>
-
-    <div class="inner-input-bar">
-      <div class="inner-input-row">
-        <input type="text" id="inner-input" placeholder="Follow up or refine the canvas…" autocomplete="off"/>
-        <button class="send-btn-inner" id="send-btn-inner" aria-label="Send">
-          <svg viewBox="0 0 13 13" fill="none">
-            <path d="M1.5 6.5H11.5M11.5 6.5L7.5 2.5M11.5 6.5L7.5 10.5" stroke="rgba(200,235,255,0.9)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
     </div>
   </div>
+</div>
 
+<!-- Fullscreen overlay -->
+<div class="img-overlay" id="img-overlay" onclick="closeOverlay()">
+  <span class="overlay-close">ESC to close</span>
+  <img id="overlay-img" src="" alt="full canvas"/>
 </div>
 
 <script>
-  // ── Layer switching ──
+  let currentCanvasUrl = '';
+  let drawCount = 0;
+
+  // ── Layer switch ──
   function showLayer(id) {
     document.querySelectorAll('.layer').forEach(l => l.classList.remove('active'));
     document.getElementById(id).classList.add('active');
+  }
+
+  // ── Example chips ──
+  function useChip(el) {
+    const text = 'draw a simple ' + el.textContent;
+    document.getElementById('landing-input').value = text;
+    document.getElementById('landing-input').focus();
   }
 
   // ── Landing → Inner ──
   async function goToInner() {
     const val = document.getElementById('landing-input').value.trim();
     if (!val) return;
-    document.getElementById('sidebar-first-prompt').textContent = val.length > 22 ? val.slice(0,22)+'…' : val;
     showLayer('inner');
+    document.getElementById('topbar-prompt').textContent = val;
     setTimeout(() => document.getElementById('inner-input').focus(), 100);
     await sendPrompt(val);
   }
 
-  // Enter key on landing input
+  // ── Landing Enter key ──
   document.getElementById('landing-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') goToInner();
   });
 
-  // Enter key on inner input
+  // ── Inner input ──
   document.getElementById('inner-input').addEventListener('keydown', async e => {
     if (e.key === 'Enter' && e.target.value.trim()) {
-      const prompt = e.target.value.trim();
-      e.target.value = '';
-      await sendPrompt(prompt);
+      const p = e.target.value.trim(); e.target.value = '';
+      await sendPrompt(p);
     }
   });
 
-  // Send button on inner input
-  document.getElementById('send-btn-inner').addEventListener('click', async () => {
+  document.getElementById('input-send-btn').addEventListener('click', async () => {
     const input = document.getElementById('inner-input');
-    const prompt = input.value.trim();
-    if (!prompt) return;
-    input.value = '';
-    await sendPrompt(prompt);
+    const p = input.value.trim(); if (!p) return;
+    input.value = ''; await sendPrompt(p);
   });
 
-  // ── Theme toggle ──
+  // ── Theme ──
   function toggleTheme() {
     const isLight = document.body.classList.toggle('light');
-    document.getElementById('icon-moon').style.display         = isLight ? 'none'  : 'block';
-    document.getElementById('icon-sun').style.display          = isLight ? 'block' : 'none';
-    document.getElementById('icon-moon-landing').style.display = isLight ? 'none'  : 'block';
-    document.getElementById('icon-sun-landing').style.display  = isLight ? 'block' : 'none';
+    ['icon-moon','icon-sun','icon-moon-l','icon-sun-l'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.display = (id.includes('moon') ? !isLight : isLight) ? 'block' : 'none';
+    });
   }
 
-  // ── Send prompt to backend ──
+  // ── Status helpers ──
+  function setStatus(state) {
+    const dot = document.getElementById('status-dot');
+    const lbl = document.getElementById('status-label');
+    const colors = { ready: '#3ddfaf', drawing: '#ffaa44', error: '#ff5a5a' };
+    dot.style.background = colors[state] || colors.ready;
+    lbl.textContent = state;
+  }
+
+  // ── Log helpers ──
+  function addLog(type, icon, text) {
+    const area = document.getElementById('log-area');
+    document.getElementById('log-empty')?.remove();
+    const el = document.createElement('div');
+    el.className = `log-entry ${type}`;
+    el.innerHTML = `<span class="log-icon">${icon}</span><span>${text}</span>`;
+    area.appendChild(el);
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function clearLog() {
+    const area = document.getElementById('log-area');
+    area.innerHTML = '';
+  }
+
+  // ── History ──
+  function addHistory(prompt, canvasUrl) {
+    const list = document.getElementById('history-list');
+    // remove empty state
+    list.querySelector('.empty-history')?.remove();
+    // deactivate others
+    list.querySelectorAll('.history-item').forEach(i => i.classList.remove('active'));
+    const item = document.createElement('div');
+    item.className = 'history-item active';
+    item.dataset.url = canvasUrl;
+    item.innerHTML = `<div class="history-dot"></div><span>${prompt}</span>`;
+    item.addEventListener('click', () => {
+      list.querySelectorAll('.history-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      showCanvas(item.dataset.url, prompt);
+    });
+    list.prepend(item);
+  }
+
+  // ── Show canvas ──
+  function showCanvas(url, prompt) {
+    currentCanvasUrl = url;
+    document.getElementById('canvas-empty').style.display = 'none';
+    const img = document.getElementById('canvas-img');
+    img.src = url; img.style.display = 'block';
+    document.getElementById('canvas-meta-text').textContent = prompt;
+    document.getElementById('meta-view-btn').style.display = 'block';
+    document.getElementById('zoom-btn').style.display = 'block';
+    document.getElementById('topbar-prompt').textContent = prompt;
+  }
+
+  // ── Fullscreen ──
+  function openOverlay(url) {
+    if (!url) return;
+    document.getElementById('overlay-img').src = url;
+    document.getElementById('img-overlay').classList.add('active');
+  }
+  function closeOverlay() {
+    document.getElementById('img-overlay').classList.remove('active');
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(); });
+
+  // ── Simulate log steps (visual feedback) ──
+  const TOOL_STEPS = [
+    { type:'system', icon:'◈', text:'Phase 1 · Planning drawing' },
+    { type:'system', icon:'◈', text:'Phase 2 · Executing plan' },
+    { type:'tool',   icon:'▶', text:'draw_ tool called' },
+    { type:'check',  icon:'✓', text:'check_ verification passed' },
+  ];
+
+  let logInterval = null;
+
+  function startLogAnimation(prompt) {
+    clearLog();
+    addLog('system', '◈', `prompt: "${prompt.length > 35 ? prompt.slice(0,35)+'…' : prompt}"`);
+    let step = 0;
+    logInterval = setInterval(() => {
+      if (step < TOOL_STEPS.length) {
+        const s = TOOL_STEPS[step];
+        addLog(s.type, s.icon, s.text);
+        step++;
+      }
+    }, 1200);
+  }
+
+  function stopLogAnimation(success, message) {
+    if (logInterval) { clearInterval(logInterval); logInterval = null; }
+    if (success) {
+      addLog('done', '✦', message || 'Drawing complete');
+    } else {
+      addLog('error', '✕', message || 'Error occurred');
+    }
+  }
+
+  // ── Main send function ──
   async function sendPrompt(prompt) {
-    const area = document.getElementById('canvas-area');
-    const loadingId = 'loading-' + Date.now();
+    setStatus('drawing');
+    document.getElementById('canvas-generating').classList.add('active');
+    document.getElementById('canvas-empty').style.display = 'none';
+    document.getElementById('canvas-img').style.display = 'none';
 
-    // Status → drawing
-    document.querySelector('.status-label').textContent = 'Drawing…';
-    document.querySelector('.status-dot').style.background = '#ffaa44';
+    startLogAnimation(prompt);
 
-    // Add user bubble
-    area.innerHTML += `
-      <div class="canvas-msg">
-        <div class="avatar-ring">
-          <svg viewBox="0 0 14 14" fill="none">
-            <circle cx="7" cy="5" r="2.5" stroke="rgba(140,200,255,0.7)" stroke-width="1"/>
-            <path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="rgba(140,200,255,0.7)" stroke-width="1" stroke-linecap="round" fill="none"/>
-          </svg>
-        </div>
-        <div class="user-bubble">${prompt}</div>
-      </div>`;
+    // Cycle gen-step text
+    const steps = ['Planning drawing…', 'Executing plan…', 'Drawing shapes…', 'Verifying output…'];
+    let si = 0;
+    const stepInterval = setInterval(() => {
+      document.getElementById('gen-step').textContent = steps[si % steps.length];
+      si++;
+    }, 2000);
 
-    // Add loading card
-    area.innerHTML += `
-      <div id="${loadingId}" class="canvas-reply">
-        <div class="canvas-label"><div class="pulse"></div>drawing · please wait…</div>
-        <div class="canvas-preview" style="display:flex;align-items:center;justify-content:center">
-          <span style="color:rgba(100,180,255,0.5);font-size:12px;letter-spacing:0.1em">Generating canvas…</span>
-        </div>
-      </div>`;
-
-    setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
-    
     try {
       const res = await fetch('/draw', {
         method: 'POST',
@@ -583,56 +990,32 @@
       });
 
       const data = await res.json();
-      document.getElementById(loadingId)?.remove();
+      clearInterval(stepInterval);
+      document.getElementById('canvas-generating').classList.remove('active');
 
       if (data.status === 'success') {
-        area.innerHTML += `
-          <div class="canvas-reply">
-            <div class="canvas-label"><div class="pulse"></div>canvas · rendered output</div>
-            <div class="canvas-preview" style="padding:0">
-              <img src="${data.canvasUrl}" style="width:100%;height:100%;object-fit:contain;cursor:zoom-in" alt="canvas output" onclick="openOverlay('${data.canvasUrl}')"/>
-            </div>
-            <div class="canvas-text-reply">Drawing complete · ${prompt}</div>
-          </div>`;
+        showCanvas(data.canvasUrl, prompt);
+        addHistory(prompt, data.canvasUrl);
+        stopLogAnimation(true, `Done · ${prompt.length > 30 ? prompt.slice(0,30)+'…' : prompt}`);
+        setStatus('ready');
+        drawCount++;
       } else {
-        area.innerHTML += `
-          <div class="canvas-reply">
-            <div class="canvas-text-reply" style="color:rgba(255,120,120,0.8)">❌ Error: ${data.error}</div>
-          </div>`;
+        stopLogAnimation(false, data.error);
+        setStatus('error');
+        document.getElementById('canvas-empty').style.display = 'flex';
+        setTimeout(() => setStatus('ready'), 3000);
       }
 
     } catch (err) {
-      document.getElementById(loadingId)?.remove();
-      area.innerHTML += `
-        <div class="canvas-reply">
-          <div class="canvas-text-reply" style="color:rgba(255,120,120,0.8)">❌ Connection error. Is the server running?</div>
-        </div>`;
+      clearInterval(stepInterval);
+      document.getElementById('canvas-generating').classList.remove('active');
+      document.getElementById('canvas-empty').style.display = 'flex';
+      stopLogAnimation(false, 'Connection error — is server running?');
+      setStatus('error');
+      setTimeout(() => setStatus('ready'), 3000);
     }
-
-    // Status → active
-    document.querySelector('.status-label').textContent = 'Canvas active';
-    document.querySelector('.status-dot').style.background = '#3ddfaf';
-    area.scrollTop = area.scrollHeight;
   }
-
-  function openOverlay(src) {
-  document.getElementById('overlay-img').src = src;
-  document.getElementById('img-overlay').classList.add('active');
-}
-
-function closeOverlay() {
-  document.getElementById('img-overlay').classList.remove('active');
-}
-
-// Close on Escape key
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeOverlay();
-});
 </script>
-
-<div class="img-overlay" id="img-overlay" onclick="closeOverlay()">
-  <img id="overlay-img" src="" alt="full view"/>
-</div>
 
 </body>
 </html>
